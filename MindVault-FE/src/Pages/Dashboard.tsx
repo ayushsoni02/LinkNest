@@ -24,7 +24,7 @@ useEffect(() => {
   return (
    <div>
     <Sidebar/>
-    <div className='p-4 ml-72 min-h-screen bg-gray-100 border-3'>
+    <div className='pl-72 p-2 min-h-screen bg-gray-100 border-3'>
    <CreateContentModel open={modelOpen} onClose={()=>{
     setModelOpen(false);
    }} />
