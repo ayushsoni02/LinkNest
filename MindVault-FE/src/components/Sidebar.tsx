@@ -1,35 +1,57 @@
-import { Navigate, useNavigate } from "react-router-dom";
-import DEVIcon from "../icons/DEVIcon";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Logo from "../icons/Logo";
 import TwitterIcon from "../icons/TwitterIcon";
 import { YouTubeIcon } from "../icons/Youtubeicon";
+import DEVIcon from "../icons/DEVIcon";
+import OtherIcon from "../icons/Other";
 import { Button } from "./Button";
 import SidebarItem from "./SidebarItem";
-import OtherIcon from "../icons/Other";
+import { ChevronRight, ChevronLeft } from "lucide-react"; // optional icons
 
+export default function Sidebar() {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const navigate = useNavigate();
 
-export default function Sidebar(){
-    const navigate = useNavigate();
-  function logout(){
-        localStorage.removeItem("token");
-        navigate("/signin");
-    }
+  const toggleSidebar = () => setIsExpanded(!isExpanded);
 
-    return <div className="h-screen bg-white border-r w-72 fixed left-0 top-0 border-gray-100 shadow-2xl pl-6 flex flex-col">
-          <div className="flex text-2xl font-bold text-gray-800 items-center pt-8">
-           <div className="pr-2 text-purple-600">
+  function logout() {
+    localStorage.removeItem("token");
+    navigate("/signin");
+  }
+
+  return (
+    <div
+      className={`h-screen bg-white border-r fixed top-0 left-0 shadow-2xl transition-all duration-300 ease-in-out ${
+        isExpanded ? " pl-6" : "w-20 pl-2"
+      }`}
+    >
+      <div className="flex items-center justify-between py-6 pr-20">
+        <div className="flex items-center">
+          <div className="text-purple-600 pr-2">
             <Logo />
-            </div>
-            MindVault
           </div>
-        <div className="pt-8 pl-4">
-            <SidebarItem text="Twitter" icon={<TwitterIcon/>}/>
-            <SidebarItem text="YouTube" icon={<YouTubeIcon/>}/>
-            <SidebarItem text="DEV Community" icon={<DEVIcon/>}/>
-            <SidebarItem text="Other one " icon={<OtherIcon/>}/>
-            </div> 
-            <div className="mt-auto pr-6 px-4 pb-6">
-             <Button fullWidth={true} variant="primary" text="logout" onClick={logout}></Button> 
-            </div>
+          {isExpanded && (
+            <span className="text-2xl font-bold text-gray-800">Cerebra</span>
+          )}
+        </div>
+        <button onClick={toggleSidebar} className="text-gray-600">
+          {isExpanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+        </button>
+      </div>
+
+      <div className="pt-8">
+        <SidebarItem text="Twitter" icon={<TwitterIcon />} isExpanded={isExpanded} />
+        <SidebarItem text="YouTube" icon={<YouTubeIcon />} isExpanded={isExpanded} />
+        <SidebarItem text="DEV Community" icon={<DEVIcon />} isExpanded={isExpanded} />
+        <SidebarItem text="Other one" icon={<OtherIcon />} isExpanded={isExpanded} />
+      </div>
+
+      <div className="mt-auto px-4 pb-6">
+        {isExpanded && (
+          <Button fullWidth={true} variant="primary" text="Logout" onClick={logout} />
+        )}
+      </div>
     </div>
+  );
 }

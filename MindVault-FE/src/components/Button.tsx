@@ -14,7 +14,7 @@ const variantClass = {
     "secondary": "bg-purple-200 text-purple-600"
 }
 
-const defaultStyle = "px-4 py-2 rounded-md flex items-center ";
+const defaultStyle = "px-4 py-2 rounded-xl flex items-center ";
 
 
 export function Button({variant,text,startIcon,onClick,fullWidth,loading}:ButtonProps){
