@@ -15,15 +15,25 @@ app.use(cors());
 app.post('/api/v1/signup', async (req, res) => {
     const username = req.body.username;
     const password = req.body.password;
+    const email = req.body.email;
 
     try {
-        await userModel.create({
+      const newUser = await userModel.create({
             username: username,
             password: password,
+            email: email
         })
+        const token = jwt.sign({
+            id: newUser._id,
+        }, JWT_PASSWORD);
+
+        // console.log(token);
+        
         res.json({
+             token,
             message: 'User created successfully',
         })
+
     } catch (e) {
         res.status(411).json({
             message: 'User already exists',
@@ -159,7 +169,7 @@ app.get('/api/v1/brain/:shareLink', async (req, res) => {
     });
 
     if (!user) {
-        res.status(404).json({
+        res.status(404).json    ({
             message: 'User not found',
         });
         return;
