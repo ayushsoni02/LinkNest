@@ -9,6 +9,7 @@ import Sidebar from '../components/Sidebar'
 import {useContent} from '../hooks/UseContent'
 import axios from 'axios'
 import { BACKEND_URL } from '../Config'
+import Navigation from '../components/Navigation'
 
 
 
@@ -22,9 +23,10 @@ useEffect(() => {
 
 
   return (
-   <div>
-    <Sidebar/>
+   <div >
+    <Navigation />
     <div className='p-4 ml-72 min-h-screen bg-gray-100 border-3'>
+    <Sidebar/>
    <CreateContentModel open={modelOpen} onClose={()=>{
     setModelOpen(false);
    }} />
