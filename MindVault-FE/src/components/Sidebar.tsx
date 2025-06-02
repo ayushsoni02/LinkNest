@@ -5,7 +5,7 @@ import TwitterIcon from "../icons/TwitterIcon";
 import { YouTubeIcon } from "../icons/Youtubeicon";
 import DEVIcon from "../icons/DEVIcon";
 import OtherIcon from "../icons/Other";
-import { Button } from "./Button";
+import { Button1 } from "./Button";
 import SidebarItem from "./SidebarItem";
 import { ChevronRight, ChevronLeft } from "lucide-react"; // optional icons
 
@@ -17,12 +17,13 @@ export default function Sidebar() {
 
   function logout() {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     navigate("/signin");
   }
 
   return (
     <div
-      className={`h-screen bg-white border-r fixed top-0 left-0 shadow-2xl transition-all duration-300 ease-in-out ${
+      className={`h-screen bg-white border-r fixed top-14 left-0 shadow-2xl transition-all duration-300 ease-in-out ${
         isExpanded ? " pl-6" : "w-20 pl-2"
       }`}
     >
@@ -49,7 +50,7 @@ export default function Sidebar() {
 
       <div className="mt-auto px-4 pb-6">
         {isExpanded && (
-          <Button fullWidth={true} variant="primary" text="Logout" onClick={logout} />
+          <Button1 fullWidth={true} variant="primary" text="Logout" onClick={logout} />
         )}
       </div>
     </div>
