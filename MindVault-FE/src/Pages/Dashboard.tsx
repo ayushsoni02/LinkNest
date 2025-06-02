@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react'
-import { Button } from '../components/Button'
+import { Button1 } from '../components/Button'
 import Card from '../components/Card'
 import CreateContentModel from '../components/CreateContentModel'
 import { Plusicon } from '../icons/PlusIcon'
@@ -25,19 +25,17 @@ useEffect(() => {
   return (
     <div>
       <Navigation />
-      <div className='p-4 ml-72 min-h-screen bg-gray-100 border-3'>
+      <div className='p-4 min-h-screen bg-gray-100 border-3'>
         <Sidebar />
-        <div>
-          <Sidebar />
           <div className='pl-72 p-2 min-h-screen bg-gray-100 border-3'>
             <CreateContentModel open={modelOpen} onClose={() => {
               setModelOpen(false);
             }} />
             <div className='flex justify-end gap-4'>
-              <Button onClick={() => {
+              <Button1 onClick={() => {
                 setModelOpen(true);
               }} variant="primary" text="Add content" startIcon={<Plusicon />} />
-              <Button onClick={async () => {
+              <Button1 onClick={async () => {
                 const response = await axios.post(`${BACKEND_URL}/api/v1/brain/share`, {
                   share: true
                 }, {
@@ -62,7 +60,6 @@ useEffect(() => {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

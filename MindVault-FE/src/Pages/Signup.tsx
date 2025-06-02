@@ -121,6 +121,7 @@ const SignUp = () => {
          })
           const jwt = response.data.token;
           localStorage.setItem("token",jwt);
+          localStorage.setItem("user", username ?? "");
           navigate("/Dashboard");
          alert("You have signup !");
     }

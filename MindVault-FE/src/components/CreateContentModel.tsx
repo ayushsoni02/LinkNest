@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import CrossIcon from "../icons/CrossIcon"
-import { Button } from "./Button"
+import { Button1 } from "./Button"
 import { Input } from "./Input"
 import axios from "axios";
 import { BACKEND_URL } from "../Config";
@@ -57,16 +57,16 @@ export default function CreateContentModel({ open, onClose }: CreateContentModal
                     <div>
                         <h1 className="font-semibold">Type : </h1>
                         <div className="flex justify-center gap-2 pb-5 pt-2">
-                        <Button text="Youtube" variant={type===ContentType.Youtube ? "primary" : "secondary"} onClick={()=>{
+                        <Button1 text="Youtube" variant={type===ContentType.Youtube ? "primary" : "secondary"} onClick={()=>{
                             setType(ContentType.Youtube)
-                        }}></Button>
-                        <Button text="Twitter" variant={type===ContentType.Youtube ? "secondary" : "primary"} onClick={()=>{
+                        }}></Button1>
+                        <Button1 text="Twitter" variant={type===ContentType.Youtube ? "secondary" : "primary"} onClick={()=>{
                             setType(ContentType.Twitter)
-                        }}></Button>
+                        }}></Button1>
                         </div>
                     </div>
                     <div className="flex justify-center ">
-                    <Button  onClick={addContent} variant="primary" text="Submit"/>
+                    <Button1  onClick={addContent} variant="primary" text="Submit"/>
                     </div>
                 </span>
             </div>

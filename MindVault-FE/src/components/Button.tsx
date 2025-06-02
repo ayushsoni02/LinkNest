@@ -17,9 +17,9 @@ const variantClass = {
 const defaultStyle = "px-4 py-2 rounded-xl flex items-center ";
 
 
-export function Button({variant,text,startIcon,onClick,fullWidth,loading}:ButtonProps){
+export function Button1({variant,text,startIcon,onClick,fullWidth,loading}:ButtonProps){
     return <button onClick={onClick} className={variantClass[variant]+" "+
-    defaultStyle+`${fullWidth?" w-full flex justify-center items-center ":""} ${loading?"opacity-45":""}`} disabled={loading}>
+    defaultStyle+`${fullWidth?"hover:bg-blue-950 w-full flex justify-center items-center ":""} ${loading?"opacity-45":""}`} disabled={loading}>
        <div className="pr-2">
         {startIcon}
        </div>

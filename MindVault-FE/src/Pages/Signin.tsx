@@ -62,6 +62,7 @@ const SignIn = () => {
         
           const jwt = response.data.token;
           localStorage.setItem("token",jwt);
+          localStorage.setItem("user", username ?? "");
           navigate("/Dashboard")
      }
   return (
