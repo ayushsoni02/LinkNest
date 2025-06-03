@@ -33,7 +33,7 @@ export default function Sidebar() {
             <Logo />
           </div>
           {isExpanded && (
-            <span className="text-2xl font-bold text-gray-800">Cerebra</span>
+            <span className="text-2xl font-bold text-blue-900">LinkNest</span>
           )}
         </div>
         <button onClick={toggleSidebar} className="text-gray-600">

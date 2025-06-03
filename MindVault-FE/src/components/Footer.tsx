@@ -12,7 +12,7 @@ const Footer = () => {
               <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg">
                 <Bookmark className="h-6 w-6 text-white" />
               </div>
-              <span className="text-xl font-bold">LinkKeepers</span>
+              <span className="text-xl font-bold">LinkNest</span>
             </div>
             <p className="text-gray-400 mb-6 max-w-md">
               The ultimate platform for saving, organizing, and rediscovering meaningful content from across the web. Never lose an important link again.
@@ -55,7 +55,7 @@ const Footer = () => {
 
         <div className="border-t border-gray-800 mt-12 pt-8 text-center">
           <p className="text-gray-400">
-            © 2024 Recallio. All rights reserved. Built with ❤️ for content curators.
+            © 2024 LinkNest. All rights reserved. Built with ❤️ for content curators.
           </p>
         </div>
       </div>
