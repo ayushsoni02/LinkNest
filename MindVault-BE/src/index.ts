@@ -29,10 +29,10 @@ app.post('/api/v1/signup', async (req, res) => {
 
         // console.log(token);
         
-        res.json({
-             token,
-            message: 'User created successfully',
-        })
+           res.json({
+           token: `Bearer ${token}`,
+           message: 'User created successfully',
+            });
 
     } catch (e) {
         res.status(411).json({
@@ -53,7 +53,7 @@ app.post('/api/v1/signin', async (req, res) => {
             id: existingUser._id,
         }, JWT_PASSWORD);
         res.json({
-            token,
+          token: `Bearer ${token}`,
         });
     } else {
         res.status(401).json({
