@@ -10,14 +10,22 @@ import {useContent} from '../hooks/UseContent'
 import axios from 'axios'
 import { BACKEND_URL } from '../Config'
 import Navigation from '../components/Navigation'
+import { useNavigate } from 'react-router-dom'
 
 
 
 function Dashboard() {
 const [modelOpen,setModelOpen] = useState(false);
 const {contents, refresh} = useContent();
+const navigate = useNavigate();
 
 useEffect(() => {
+     const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/signin'); // redirect if not logged in
+      return;
+    }
+
     refresh();
   }, [modelOpen])
 
@@ -36,15 +44,21 @@ useEffect(() => {
                 setModelOpen(true);
               }} variant="primary" text="Add content" startIcon={<Plusicon />} />
               <Button1 onClick={async () => {
-                const response = await axios.post(`${BACKEND_URL}/api/v1/brain/share`, {
+                try{
+                 const response = await axios.post(`${BACKEND_URL}/api/v1/brain/share`, {
                   share: true
                 }, {
                   headers: {
-                    "Authorization": localStorage.getItem("token")
+                    'Authorization': localStorage.getItem("token") || ''
                   }
                 });
                 const shareUrl = `http://localhost:5173/share/${response.data.hash}`;
                 alert(shareUrl);
+                }catch(error){
+                  alert("Unable to share brain. Are you logged in?");
+                  console.error(error);
+                }
+                
               }} variant="secondary" text="Share brain" startIcon={<ShareIcon />} />
             </div>
             <div className='flex gap-4 flex-wrap pt-8'>

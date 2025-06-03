@@ -60,8 +60,8 @@ const SignIn = () => {
                  password
           })
         
-          const jwt = response.data.token;
-          localStorage.setItem("token",jwt);
+          // const jwt = response.data.token;
+          localStorage.setItem("token", response.data.token);
           localStorage.setItem("user", username ?? "");
           navigate("/Dashboard")
      }
