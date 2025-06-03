@@ -1,5 +1,5 @@
 import { Button } from "../components/custom/Button";
-import { ArrowRight, Bookmark, Star } from "lucide-react";
+import { ArrowRight, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Hero = () => {

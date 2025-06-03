@@ -50,8 +50,8 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "../components/custom/Button";
-import { Button1 } from "../components/Button";
-import { Bookmark, LogOut } from "lucide-react";
+// import { Button1 } from "../components/Button";
+import { Bookmark } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import ProfileDropdown from "./ProfileDropdown";
 
