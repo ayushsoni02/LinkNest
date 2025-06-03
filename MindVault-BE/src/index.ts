@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { ContentModel, linkModel, userModel } from './db';
 
 import { JWT_PASSWORD } from './conf';
+
 import { userMiddleware } from './middleware';
 import { random } from './utils';
 import cors from "cors";
