@@ -8,6 +8,7 @@ import { JWT_PASSWORD } from './conf';
 import { userMiddleware } from './middleware';
 import { random } from './utils';
 import cors from "cors";
+import path from "path";
 
 const app = express();
 app.use(express.json());
@@ -179,6 +180,10 @@ app.get('/api/v1/brain/:shareLink', async (req, res) => {
         username: user.username,
         content: content,
     })
+});
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 app.listen(3000, () => {

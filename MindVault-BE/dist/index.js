@@ -19,6 +19,7 @@ const conf_1 = require("./conf");
 const middleware_1 = require("./middleware");
 const utils_1 = require("./utils");
 const cors_1 = __importDefault(require("cors"));
+const path_1 = __importDefault(require("path"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)());
@@ -166,6 +167,9 @@ app.get('/api/v1/brain/:shareLink', (req, res) => __awaiter(void 0, void 0, void
         content: content,
     });
 }));
+app.get('*', (req, res) => {
+    res.sendFile(path_1.default.join(__dirname, 'dist', 'index.html'));
+});
 app.listen(3000, () => {
     console.log('Server is running on port 3000');
 });
