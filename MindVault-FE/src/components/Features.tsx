@@ -42,10 +42,10 @@ const Features = () => {
   ];
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+    <section className=" dark:bg-gray-900 text-black dark:text-white py-20 px-4 sm:px-6 lg:px-8">
+      <div className=" dark:bg-gray-900 text-black dark:text-white max-w-7xl mx-auto">
+        <div className=" dark:bg-gray-900 text-black dark:text-white text-center mb-16">
+          <h2 className=" dark:bg-gray-900 dark:text-white text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Everything You Need to
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Organize Your Digital Life</span>
           </h2>
@@ -54,17 +54,17 @@ const Features = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className=" dark:bg-gray-900 text-black dark:text-white grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white/80 backdrop-blur-sm">
+            <Card key={index} className=" dark:bg-gray-900 text-black dark:text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white/80 backdrop-blur-sm">
               <CardHeader>
-                <div className={`w-12 h-12 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mb-4`}>
-                  <feature.icon className={`h-6 w-6 ${feature.color}`} />
+                <div className={` dark:bg-gray-900 text-black dark:text-white w-12 h-12 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mb-4`}>
+                  <feature.icon className={` dark:bg-gray-900  dark:text-white h-6 w-6 ${feature.color}`} />
                 </div>
-                <CardTitle className="text-xl font-bold text-gray-900">{feature.title}</CardTitle>
+                <CardTitle className=" dark:bg-gray-900  dark:text-white text-xl font-bold text-gray-900">{feature.title}</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-600 text-base">
+                <CardDescription className=" dark:bg-gray-900  dark:text-white text-gray-600 text-base">
                   {feature.description}
                 </CardDescription>
               </CardContent>

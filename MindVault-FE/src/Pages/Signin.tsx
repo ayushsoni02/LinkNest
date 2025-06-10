@@ -66,13 +66,13 @@ const SignIn = () => {
           navigate("/Dashboard")
      }
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="bg-gray-100 dark:bg-gray-900 text-black dark:text-white min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Navigation />
-      <div className="flex items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-md">
+      <div className="dark:bg-gray-900 text-black dark:text-white flex items-center justify-center px-4 py-12">
+        <Card className=" w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-            <CardDescription>Sign in to your LinkKeepers account</CardDescription>
+            <CardDescription>Sign in to your LinkNest account</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">

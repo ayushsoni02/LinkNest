@@ -1,79 +1,88 @@
-import { useRef, useState } from "react"
-import CrossIcon from "../icons/CrossIcon"
-import { Button1 } from "./Button"
-import { Input } from "./Input"
+import { useRef, useState } from "react";
+import CrossIcon from "../icons/CrossIcon";
+import { Button1 } from "./Button";
+import { Input } from "./Input";
 import axios from "axios";
 import { BACKEND_URL } from "../Config";
 
+const CONTENT_TYPES = ["youtube", "twitter", "linkedin", "medium", "Dev.to", "other"];
 
-enum ContentType {
-    Youtube = "youtube",
-    Twitter = "twitter"
- }
-
- interface CreateContentModalProps {
-    open: boolean;
-    onClose: () => void;
+interface CreateContentModalProps {
+  open: boolean;
+  onClose: () => void;
 }
 
 export default function CreateContentModel({ open, onClose }: CreateContentModalProps) {
-     const titleRef = useRef<HTMLInputElement>();
-     const linkRef = useRef<HTMLInputElement>(); 
-     const [type, setType] = useState(ContentType.Youtube);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const linkRef = useRef<HTMLInputElement>(null);
+  const [type, setType] = useState("youtube");
 
-    async function addContent(){
-           const title = titleRef.current?.value;
-           const link = linkRef.current?.value;
+  async function addContent() {
+    const title = titleRef.current?.value;
+    const link = linkRef.current?.value;
 
-           await axios.post(`${BACKEND_URL}/api/v1/content`,{
-            link,
-            title,
-            type
-           },{
-              headers:{
-                  "Authorization":localStorage.getItem("token")
-              }
-           })
-           onClose();
-    }
-    
-    return <div>
-        {open &&    <div> 
-            <div className="fixed top-0 left-0 w-screen h-screen bg-slate-600  opacity-60 flex justify-center">
-              </div>
-              <div className="fixed  left-0 w-screen h-screen top-0 flex justify-center">
-             
-              <div className="flex flex-col justify-center ">
-                <span className="bg-white opacity-100 p-4 rounded fixed">
-                    <div className="flex justify-end">
-                        <div onClick={onClose} className="cursor-pointer">
-                        <CrossIcon />
-                        </div>
-                    </div>
-                    <div>
-                        <Input reference={titleRef} placeholder={"Title"} />
-                        <Input reference={linkRef} placeholder={"Link"} />
-                    </div>
-                    <div>
-                        <h1 className="font-semibold">Type : </h1>
-                        <div className="flex justify-center gap-2 pb-5 pt-2">
-                        <Button1 text="Youtube" variant={type===ContentType.Youtube ? "primary" : "secondary"} onClick={()=>{
-                            setType(ContentType.Youtube)
-                        }}></Button1>
-                        <Button1 text="Twitter" variant={type===ContentType.Youtube ? "secondary" : "primary"} onClick={()=>{
-                            setType(ContentType.Twitter)
-                        }}></Button1>
-                        </div>
-                    </div>
-                    <div className="flex justify-center ">
-                    <Button1  onClick={addContent} variant="primary" text="Submit"/>
-                    </div>
-                </span>
+    await axios.post(
+      `${BACKEND_URL}/api/v1/content`,
+      {
+        link,
+        title,
+        type
+      },
+      {
+        headers: {
+          Authorization: localStorage.getItem("token") || ""
+        }
+      }
+    );
+    onClose();
+  }
+
+  if (!open) return null;
+
+  return (
+    <div className=" fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+
+      {/* Modal */}
+      <div className=" z-10 bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-600 hover:text-black"
+        >
+          <CrossIcon />
+        </button>
+
+        {/* Heading */}
+        <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">
+          Add the relevant content
+        </h2>
+
+        {/* Form Content */}
+        <div className="space-y-5">
+          <Input reference={titleRef} placeholder="Title" />
+          <Input reference={linkRef} placeholder="Link" />
+
+          <div>
+            <h3 className="font-semibold mb-2 text-gray-700">Type:</h3>
+            <div className="flex flex-wrap gap-2">
+              {CONTENT_TYPES.map((ct) => (
+                <Button1
+                  key={ct}
+                  text={ct.charAt(0).toUpperCase() + ct.slice(1)}
+                  variant={type === ct ? "primary" : "secondary"}
+                  onClick={() => setType(ct)}
+                />
+              ))}
             </div>
-            </div>
-        </div>}
+          </div>
+
+          <div className="flex justify-center pt-4">
+            <Button1 onClick={addContent} variant="primary" text="Submit" />
+          </div>
+        </div>
+      </div>
     </div>
+  );
 }
-
-
-

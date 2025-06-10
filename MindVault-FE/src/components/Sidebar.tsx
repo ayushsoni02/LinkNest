@@ -8,9 +8,11 @@ import OtherIcon from "../icons/Other";
 import { Button1 } from "./Button";
 import SidebarItem from "./SidebarItem";
 import { ChevronRight, ChevronLeft } from "lucide-react"; // optional icons
+import LinkedinIcon from "../icons/LinkedinIcon";
+import MediumIcon from "../icons/MediumIcon";
 
 export default function Sidebar() {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const navigate = useNavigate();
 
   const toggleSidebar = () => setIsExpanded(!isExpanded);
@@ -23,17 +25,17 @@ export default function Sidebar() {
 
   return (
     <div
-      className={`h-screen bg-white border-r fixed top-14 left-0 shadow-2xl transition-all duration-300 ease-in-out ${
+      className={` dark:bg-gray-900 text-black dark:text-white h-screen bg-white border-r fixed top-14 left-0 shadow-2xl transition-all duration-300 ease-in-out ${
         isExpanded ? " pl-6" : "w-20 pl-2"
       }`}
     >
-      <div className="flex items-center justify-between py-6 pr-20">
-        <div className="flex items-center">
-          <div className="text-purple-600 pr-2">
+      <div className=" flex items-center justify-between py-6 pr-20">
+        <div className=" flex items-center">
+          <div className=" text-purple-600 pr-2">
             <Logo />
           </div>
           {isExpanded && (
-            <span className="text-2xl font-bold text-blue-900">LinkNest</span>
+            <span className=" text-2xl font-bold text-blue-700">LinkNest</span>
           )}
         </div>
         <button onClick={toggleSidebar} className="text-gray-600">
@@ -45,6 +47,8 @@ export default function Sidebar() {
         <SidebarItem text="Twitter" icon={<TwitterIcon />} isExpanded={isExpanded} />
         <SidebarItem text="YouTube" icon={<YouTubeIcon />} isExpanded={isExpanded} />
         <SidebarItem text="DEV Community" icon={<DEVIcon />} isExpanded={isExpanded} />
+        <SidebarItem text="Linkedin" icon={<LinkedinIcon />} isExpanded={isExpanded} />
+        <SidebarItem text="medium" icon={<MediumIcon />} isExpanded={isExpanded} />
         <SidebarItem text="Other one" icon={<OtherIcon />} isExpanded={isExpanded} />
       </div>
 

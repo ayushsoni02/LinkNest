@@ -2,8 +2,11 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { BACKEND_URL } from "../Config";
 
+// Define Content type for type safety
+export type Content = { _id: string; title: string; type: string; link: string };
+
 export function useContent(){
-   const [contents,setContents] = useState([]);
+   const [contents,setContents] = useState<Content[]>([]);
  
    function refresh() {
     axios.get(`${BACKEND_URL}/api/v1/content`, { 

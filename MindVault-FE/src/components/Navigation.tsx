@@ -50,22 +50,34 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "../components/custom/Button";
-// import { Button1 } from "../components/Button";
-import { Bookmark } from "lucide-react";
+import { Bookmark, Moon, Sun } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import ProfileDropdown from "./ProfileDropdown";
 
 const Navigation = () => {
   const [username, setUsername] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [isDark, setIsDark] = useState(() =>
+    localStorage.getItem("theme") === "dark"
+  );
 
   useEffect(() => {
-    // Replace with your actual logic to extract username
     const user = localStorage.getItem("user");
     if (user) {
       setUsername(user);
     }
   }, []);
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (isDark) {
+      root.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      root.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [isDark]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -75,7 +87,7 @@ const Navigation = () => {
   };
 
   return (
-    <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-50">
+    <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-50 dark:bg-gray-800 text-black dark:text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -89,25 +101,31 @@ const Navigation = () => {
           </div>
 
           {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
+          <div className=" hidden md:flex items-center space-x-8">
+            <Link to="/" className=" dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">
               Home
             </Link>
-            <Link to="/dashboard" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
+            <Link to="/dashboard" className=" dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">
               Dashboard
             </Link>
-            <Link to="/about" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
+            <Link to="/about" className=" dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">
               About
             </Link>
           </div>
 
-          {/* Auth Section */}
+          {/* Right-side section */}
           <div className="flex items-center space-x-4">
-            {username ? (
-              <div className="flex items-center space-x-4">
-               <ProfileDropdown username={username} onLogout={handleLogout} />
+            {/* Toggle Dark Mode */}
+            <button
+              onClick={() => setIsDark(!isDark)}
+              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+              title="Toggle Dark Mode"
+            >
+              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
 
-              </div>
+            {username ? (
+              <ProfileDropdown username={username} onLogout={handleLogout} />
             ) : (
               <>
                 <Button variant="ghost" asChild>
