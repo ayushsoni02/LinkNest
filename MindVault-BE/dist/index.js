@@ -23,6 +23,7 @@ const path_1 = __importDefault(require("path"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)());
+app.use(express_1.default.static(path_1.default.join(__dirname, 'build')));
 app.post('/api/v1/signup', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const username = req.body.username;
     const password = req.body.password;
@@ -167,8 +168,22 @@ app.get('/api/v1/brain/:shareLink', (req, res) => __awaiter(void 0, void 0, void
         content: content,
     });
 }));
+app.delete('/api/v1/content/:id', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const contentId = req.params.id;
+    try {
+        yield db_1.ContentModel.deleteOne({
+            _id: contentId,
+            // @ts-ignore
+            userId: req.userId
+        });
+        res.json({ message: 'Content deleted successfully' });
+    }
+    catch (err) {
+        res.status(500).json({ message: 'Failed to delete content' });
+    }
+}));
 app.get('*', (req, res) => {
-    res.sendFile(path_1.default.join(__dirname, 'dist', 'index.html'));
+    res.sendFile(path_1.default.join(__dirname, 'build', 'index.html'));
 });
 app.listen(3000, () => {
     console.log('Server is running on port 3000');
