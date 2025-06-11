@@ -56,7 +56,7 @@ export default function CreateContentModel({ open, onClose }: CreateContentModal
 
         {/* Heading */}
         <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">
-          Add the relevant content
+          Add content here!
         </h2>
 
         {/* Form Content */}
