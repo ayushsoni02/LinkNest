@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Logo from "../icons/Logo";
 import TwitterIcon from "../icons/TwitterIcon";
@@ -11,7 +11,13 @@ import { ChevronRight, ChevronLeft } from "lucide-react"; // optional icons
 import LinkedinIcon from "../icons/LinkedinIcon";
 import MediumIcon from "../icons/MediumIcon";
 
-export default function Sidebar() {
+
+type SidebarProps = {
+  className?: string;
+  onFilterChange?: (tag: string | null) => void;  // 👈 allow null
+};
+
+export default function Sidebar({ className, onFilterChange }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const navigate = useNavigate();
 
@@ -23,11 +29,24 @@ export default function Sidebar() {
     navigate("/signin");
   }
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setIsExpanded(false);
+      } else {
+        setIsExpanded(true);
+      }
+    };
+
+    handleResize(); // initial call
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     <div
-      className={` dark:bg-gray-900 text-black dark:text-white h-screen bg-white border-r fixed top-14 left-0 shadow-2xl transition-all duration-300 ease-in-out ${
-        isExpanded ? " pl-6" : "w-20 pl-2"
-      }`}
+      className={`${className} dark:bg-gray-900 text-black dark:text-white h-screen bg-white border-r fixed top-14 left-0 shadow-2xl transition-all duration-300 ease-in-out z-30
+  ${isExpanded ? "w-64 pl-6" : "w-16 pl-2"}`}
     >
       <div className=" flex items-center justify-between py-6 pr-20">
         <div className=" flex items-center">
@@ -44,12 +63,48 @@ export default function Sidebar() {
       </div>
 
       <div className="pt-8">
-        <SidebarItem text="Twitter" icon={<TwitterIcon />} isExpanded={isExpanded} />
-        <SidebarItem text="YouTube" icon={<YouTubeIcon />} isExpanded={isExpanded} />
-        <SidebarItem text="DEV Community" icon={<DEVIcon />} isExpanded={isExpanded} />
-        <SidebarItem text="Linkedin" icon={<LinkedinIcon />} isExpanded={isExpanded} />
-        <SidebarItem text="medium" icon={<MediumIcon />} isExpanded={isExpanded} />
-        <SidebarItem text="Other one" icon={<OtherIcon />} isExpanded={isExpanded} />
+        <SidebarItem
+          text="All"
+          icon={<span className="text-lg font-bold">🌐</span>}
+          isExpanded={isExpanded}
+          onClick={() => onFilterChange?.(null)}
+        />
+        <SidebarItem
+          text="Twitter"
+          icon={<TwitterIcon />}
+          isExpanded={isExpanded}
+          onClick={() => onFilterChange?.("twitter")}
+        />
+        <SidebarItem
+          text="YouTube"
+          icon={<YouTubeIcon />}
+          isExpanded={isExpanded}
+          onClick={() => onFilterChange?.("youtube")}
+        />
+        <SidebarItem
+          text="DEV Community"
+          icon={<DEVIcon />}
+          isExpanded={isExpanded}
+          onClick={() => onFilterChange?.("Dev.to")}
+        />
+        <SidebarItem
+          text="Linkedin"
+          icon={<LinkedinIcon />}
+          isExpanded={isExpanded}
+          onClick={() => onFilterChange?.("linkedin")}
+        />
+        <SidebarItem
+          text="medium"
+          icon={<MediumIcon />}
+          isExpanded={isExpanded}
+          onClick={() => onFilterChange?.("medium")}
+        />
+        <SidebarItem
+          text="Other one"
+          icon={<OtherIcon />}
+          isExpanded={isExpanded}
+          onClick={() => onFilterChange?.("other")}
+        />
       </div>
 
       <div className="mt-auto px-4 pb-6">

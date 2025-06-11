@@ -10,6 +10,7 @@ import axios from 'axios'
 import { BACKEND_URL } from '../Config'
 import Navigation from '../components/Navigation'
 import { useNavigate } from 'react-router-dom'
+import { FRONTEND_URL } from '../Config'
 
 function Dashboard() {
   const [modelOpen, setModelOpen] = useState(false);
@@ -17,6 +18,7 @@ function Dashboard() {
   const { contents, refresh } = useContent() as { contents: Content[]; refresh: () => void };
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   // ✅ Removed window.confirm() - Card component handles confirmation
   const handleDelete = async (_id: string) => {
@@ -44,15 +46,15 @@ function Dashboard() {
 
   // Filter logic
   const filteredContents = contents.filter(content =>
-    content.title.toLowerCase().includes(searchQuery.toLowerCase())
+    content.title.toLowerCase().includes(searchQuery.toLowerCase()) &&   (!activeFilter || content.type === activeFilter)
   );
 
   return (
     <div>
       <Navigation />
       <div className='p-4 min-h-screen bg-gray-100 dark:bg-gray-900 text-black dark:text-white'>
-        <Sidebar />
-        <div className='pl-72 p-2'>
+        <Sidebar className="hidden md:block fixed" onFilterChange={setActiveFilter}/>
+        <div className='md:pl-72 p-2' >
           <CreateContentModel open={modelOpen} onClose={() => setModelOpen(false)} />
           <div className='flex justify-between items-center gap-4 '>
             <input
@@ -79,7 +81,7 @@ function Dashboard() {
                         'Authorization': localStorage.getItem("token") || ''
                       }
                     });
-                    const shareUrl = `http://localhost:5173/share/${response.data.hash}`;
+                    const shareUrl = `${FRONTEND_URL}/share/${response.data.hash}`;
                     alert(shareUrl);
                   } catch (error) {
                     alert("Unable to share brain. Are you logged in?");
@@ -87,12 +89,12 @@ function Dashboard() {
                   }
                 }}
                 variant="secondary"
-                text="Share brain"
+                text="Share Nest"
                 startIcon={<ShareIcon />}
               />
             </div>
           </div>
-          <div className='flex gap-4 flex-wrap pt-8'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-8'>
             {filteredContents.map(({ _id, type, link, title }) => {
               const allowedTypes = ["youtube", "twitter", "linkedin", "medium", "Dev.to", "other"] as const;
               if (allowedTypes.includes(type as typeof allowedTypes[number])) {

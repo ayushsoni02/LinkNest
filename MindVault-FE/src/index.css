@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+:root {
+  --sidebar-width: 16rem;
+  --sidebar-collapsed-width: 4rem;
+}
