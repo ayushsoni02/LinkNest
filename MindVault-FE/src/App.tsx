@@ -4,9 +4,17 @@ import Signup from "./Pages/Signup"
 import { BrowserRouter,Route,Routes } from "react-router-dom"
 import Index from "./Pages/Index"
 import About from "./Pages/About"
+import { useEffect } from "react";
+import { BACKEND_URL } from "./Config"
 
 
 function App() {
+
+   useEffect(() => {
+    fetch(`${BACKEND_URL}/ping`)
+      .then(() => console.log("Backend pinged"))
+      .catch(err => console.error("Ping failed", err));
+  }, []);
 
   return <BrowserRouter>
     <Routes>
