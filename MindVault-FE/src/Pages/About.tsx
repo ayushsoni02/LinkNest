@@ -20,7 +20,7 @@ const About = () => {
 
         {/* Mission Block */}
         <section className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg mb-12">
-          <h2 className="text-2xl font-semibold mb-4 text-purple-600">🚀 Why it Exists</h2>
+          <h2 className="text-2xl font-semibold mb-4 text-purple-600"> Why it Exists</h2>
           <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
             The internet is full of incredible content — from deep Twitter threads to thought-provoking YouTube videos. But we often forget to bookmark or return to them.
             <br />
@@ -31,13 +31,22 @@ const About = () => {
         {/* Screenshot */}
         <section className="mb-16">
           <h2 className="text-2xl font-semibold mb-6 text-purple-600">📸 Dashboard Preview</h2>
-          <div className="rounded-xl overflow-hidden shadow-lg border dark:border-gray-700">
+          <div className="rounded-xl overflow-hidden shadow-lg border dark:border-gray-700 mb-4">
             <img
-              src="/screenshot-dashboard.png"
+              src="/pic-2.png"
               alt="LinkNest Dashboard"
               className="w-full object-cover"
             />
+            
           </div>
+           {/* <div className="rounded-xl overflow-hidden shadow-lg border dark:border-gray-700 mt-5">
+            <img
+              src="/pic-1.png"
+              alt="LinkNest Dashboard"
+              className="w-full object-cover"
+            />
+            
+          </div> */}
         </section>
 
         {/* Feedback Form */}
