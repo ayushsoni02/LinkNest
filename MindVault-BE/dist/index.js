@@ -185,6 +185,9 @@ app.delete('/api/v1/content/:id', middleware_1.userMiddleware, (req, res) => __a
 app.get('*', (req, res) => {
     res.sendFile(path_1.default.join(__dirname, 'build', 'index.html'));
 });
+app.get('/ping', (req, res) => {
+    res.send({ status: 'ok' });
+});
 app.listen(3000, () => {
     console.log('Server is running on port 3000');
 });
