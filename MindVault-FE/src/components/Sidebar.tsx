@@ -62,10 +62,10 @@ export default function Sidebar({ className, onFilterChange }: SidebarProps) {
         </button>
       </div>
 
-      <div className="pt-8">
+      <div className="pt-8 ">
         <SidebarItem
           text="All"
-          icon={<span className="text-lg font-bold">🌐</span>}
+          icon={<span className="text-lg font-bold ">🌐</span>}
           isExpanded={isExpanded}
           onClick={() => onFilterChange?.(null)}
         />

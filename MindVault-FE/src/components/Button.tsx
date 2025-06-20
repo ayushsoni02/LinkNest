@@ -10,7 +10,7 @@ interface ButtonProps{
 }
 
 const variantClass = {
-    "primary": "bg-purple-600 text-white",
+    "primary": "bg-blue-600 text-white",
     "secondary": "bg-purple-200 text-purple-600"
 }
 

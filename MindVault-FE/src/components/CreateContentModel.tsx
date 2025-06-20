@@ -60,7 +60,7 @@ export default function CreateContentModel({ open, onClose }: CreateContentModal
         </h2>
 
         {/* Form Content */}
-        <div className="space-y-5">
+        <div className="space-y-5 dark:text-blue-950">
           <Input reference={titleRef} placeholder="Title" />
           <Input reference={linkRef} placeholder="Link" />
 

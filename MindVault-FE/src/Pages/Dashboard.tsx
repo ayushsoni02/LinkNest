@@ -19,8 +19,27 @@ function Dashboard() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // ✅ Removed window.confirm() - Card component handles confirmation
+  useEffect(() => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    navigate('/signin');
+    return;
+  }
+
+  const loadContent = async () => {
+    setLoading(true);
+    try {
+      await refresh();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadContent();
+}, [modelOpen]);
+
   const handleDelete = async (_id: string) => {
     try {
       await axios.delete(`${BACKEND_URL}/api/v1/content/${_id}`, {
@@ -46,14 +65,14 @@ function Dashboard() {
 
   // Filter logic
   const filteredContents = contents.filter(content =>
-    content.title.toLowerCase().includes(searchQuery.toLowerCase()) &&   (!activeFilter || content.type === activeFilter)
+    content.title.toLowerCase().includes(searchQuery.toLowerCase()) && (!activeFilter || content.type === activeFilter)
   );
 
   return (
     <div>
       <Navigation />
       <div className='p-4 min-h-screen bg-gray-100 dark:bg-gray-900 text-black dark:text-white'>
-        <Sidebar className="hidden md:block fixed" onFilterChange={setActiveFilter}/>
+        <Sidebar className="hidden md:block fixed" onFilterChange={setActiveFilter} />
         <div className='md:pl-72 p-2' >
           <CreateContentModel open={modelOpen} onClose={() => setModelOpen(false)} />
           <div className='flex justify-between items-center gap-4 '>
@@ -94,24 +113,58 @@ function Dashboard() {
               />
             </div>
           </div>
-          <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-8'>
-            {filteredContents.map(({ _id, type, link, title }) => {
-              const allowedTypes = ["youtube", "twitter", "linkedin", "medium", "Dev.to", "other"] as const;
-              if (allowedTypes.includes(type as typeof allowedTypes[number])) {
-                return (
-                  <Card
-                    key={_id}
-                    id={_id}
-                    type={type as typeof allowedTypes[number]}
-                    link={link}
-                    title={title}
-                    onDelete={handleDelete}
-                  />
-                );
-              }
-              return null;
-            })}
-          </div>
+
+          {loading ? (
+            // Skeleton loading state
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-8">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-52 bg-gray-300 dark:bg-gray-700 rounded-xl animate-pulse"
+                />
+              ))}
+            </div>
+          ) : filteredContents.length === 0 ? (
+            // Empty state
+            <div className="flex flex-col items-center pt-10 justify-center h-96 text-center gap-4 text-gray-500 dark:text-gray-300">
+              <img
+                src="/undraw_no-data_ig65.svg"
+                alt="Empty"
+                className="w-30 h-40 object-contain"
+              />
+              <h2 className="text-xl font-semibold">Looks like it’s empty in here!</h2>
+              <p className="max-w-md">
+                You haven’t added any content yet — or your current filter is too specific. Let’s get started!
+              </p>
+              <button
+                onClick={() => setModelOpen(true)}
+                className="mt-2 px-5 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition"
+              >
+                + Add your first link
+              </button>
+            </div>
+          ) : (
+            // Actual content
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-8">
+              {filteredContents.map(({ _id, type, link, title }) => {
+                const allowedTypes = ["youtube", "twitter", "linkedin", "medium", "Dev.to", "other"] as const;
+                if (allowedTypes.includes(type as typeof allowedTypes[number])) {
+                  return (
+                    <Card
+                      key={_id}
+                      id={_id}
+                      type={type as typeof allowedTypes[number]}
+                      link={link}
+                      title={title}
+                      onDelete={handleDelete}
+                    />
+                  );
+                }
+                return null;
+              })}
+            </div>
+          )}
+
         </div>
       </div>
     </div>
