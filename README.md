@@ -2,7 +2,8 @@
 
 LinkNest is a second-brain web app that helps you **save**, **organize**, and **revisit** content from your favorite platforms like YouTube, Twitter, Medium, LinkedIn, Dev.to, and more.
 
-![LinkNest Screenshot](./screenshot.png) <!-- Add an actual image named screenshot.png -->
+<img width="1470" height="840" alt="Screenshot 2025-07-17 at 5 11 33 PM" src="https://github.com/user-attachments/assets/75ef40a2-f21a-456c-b46c-3ad177d435d9" />
+ <!-- Add an actual image named screenshot.png -->
 
 ## 🌟 Features
 
@@ -20,7 +21,8 @@ LinkNest is a second-brain web app that helps you **save**, **organize**, and **
 
 ## 📸 Preview
 
-![Dashboard Preview](./dashboard.png) <!-- Replace with your dashboard screenshot -->
+![Uploading Screenshot 2025-07-17 at 5.12.51 PM.png…]()
+ <!-- Replace with your dashboard screenshot -->
 
 ---
 
