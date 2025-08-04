@@ -10,7 +10,8 @@ import SidebarItem from "./SidebarItem";
 import { ChevronRight, ChevronLeft } from "lucide-react"; // optional icons
 import LinkedinIcon from "../icons/LinkedinIcon";
 import MediumIcon from "../icons/MediumIcon";
-
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 type SidebarProps = {
   className?: string;
@@ -26,6 +27,7 @@ export default function Sidebar({ className, onFilterChange }: SidebarProps) {
   function logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    toast.info("logged out successfully");
     navigate("/signin");
   }
 
