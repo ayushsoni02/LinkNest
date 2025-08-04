@@ -30,7 +30,7 @@ const SignUp = () => {
           const jwt = response.data.token;
           localStorage.setItem("token",jwt);
           localStorage.setItem("user", username ?? "");
-          toast.success("login successful");
+          toast.success("signUp successful");
           navigate("/Dashboard");
          //alert("You have signup !");
     }
