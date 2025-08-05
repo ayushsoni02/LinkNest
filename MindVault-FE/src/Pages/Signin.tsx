@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Input } from "../components/custom/Input";
 import { Label } from "../components/custom/Label";
 import { Link } from "react-router-dom";
-
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 const SignIn = () => {
     const usernameRef = useRef<HTMLInputElement>();
     const passwordRef = useRef<HTMLInputElement>();
@@ -30,6 +31,7 @@ const SignIn = () => {
           // const jwt = response.data.token;
           localStorage.setItem("token", response.data.token);
           localStorage.setItem("user", username ?? "");
+          toast.success("login successful");
           navigate("/Dashboard")
      }
   return (

@@ -9,7 +9,8 @@ import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_URL } from "../Config";
-
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 const SignUp = () => {
 
    const usernameRef = useRef<HTMLInputElement>();
@@ -29,8 +30,9 @@ const SignUp = () => {
           const jwt = response.data.token;
           localStorage.setItem("token",jwt);
           localStorage.setItem("user", username ?? "");
+          toast.success("signUp successful");
           navigate("/Dashboard");
-         alert("You have signup !");
+         //alert("You have signup !");
     }
 
   return (

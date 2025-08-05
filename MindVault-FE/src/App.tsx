@@ -6,6 +6,8 @@ import Index from "./Pages/Index"
 import About from "./Pages/About"
 import { useEffect } from "react";
 import { BACKEND_URL } from "./Config"
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 function App() {
@@ -17,6 +19,8 @@ function App() {
   }, []);
 
   return <BrowserRouter>
+    <ToastContainer position="top-right" autoClose={3000} />
+
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/signup" element={<Signup/>}/>

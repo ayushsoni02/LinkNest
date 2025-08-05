@@ -2,7 +2,8 @@
 import { Menu } from "@headlessui/react";
 import { ChevronDown, User, Settings, LogOut } from "lucide-react";
 import clsx from "clsx";
-
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 const ProfileDropdown = ({ username, onLogout }) => {
   const initials = username
     ? username
@@ -41,7 +42,13 @@ const ProfileDropdown = ({ username, onLogout }) => {
           <Menu.Item>
             {({ active }) => (
               <button
-                onClick={onLogout}
+                  onClick={() => {
+                toast.info("Logged out successfully!", {
+                  position: "top-right",
+                  autoClose: 2000,
+                });
+                onLogout(); // still call the original logout function
+              }}
                 className={clsx("w-full px-4 py-2 text-sm text-left text-red-500 ", active && "bg-gray-100")}
               >
                 <LogOut className="inline-block w-4 h-4 mr-2" /> Logout
