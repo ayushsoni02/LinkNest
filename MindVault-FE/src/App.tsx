@@ -6,7 +6,7 @@ import Index from "./Pages/Index"
 import About from "./Pages/About"
 import { useEffect } from "react";
 import { BACKEND_URL } from "./Config"
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 
