@@ -36,9 +36,9 @@ const SignUp = () => {
     }
 
   return (
-    <div className="bg-gray-100 dark:bg-gray-900 text-black dark:text-white min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:bg-gradient-to-br dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
       <Navigation />
-      <div className="bg-gray-100 dark:bg-gray-900 text-black dark:text-white flex items-center justify-center px-4 py-12">
+      <div className="text-black dark:text-white flex items-center justify-center px-4 py-12">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
