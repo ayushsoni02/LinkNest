@@ -35,7 +35,7 @@ const Footer = () => {
             <h4 className="font-semibold mb-4">Product</h4>
             <ul className="space-y-2">
               <li><Link to="/dashboard" className="text-gray-400 hover:text-white transition-colors">Dashboard</Link></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Features</a></li>
+              <li><Link to="/features"  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="text-gray-400 hover:text-white transition-colors">Features</Link></li>
               <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
               <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Browser Extension</a></li>
             </ul>
