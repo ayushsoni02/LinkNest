@@ -4,6 +4,7 @@ import Signup from "./Pages/Signup"
 import { BrowserRouter,Route,Routes } from "react-router-dom"
 import Index from "./Pages/Index"
 import About from "./Pages/About"
+import Features from "./Pages/Features"
 import { useEffect } from "react";
 import { BACKEND_URL } from "./Config"
 import { ToastContainer} from 'react-toastify';
@@ -27,6 +28,7 @@ function App() {
       <Route path="/signin" element={<SignIn/>}/>
       <Route path="/Dashboard" element={<Dashboard/>}/>
       <Route path="/about" element={<About />} />
+      <Route path="/features" element={<Features />} />
     </Routes>
   </BrowserRouter>
   
