@@ -1,7 +1,8 @@
 // Card.tsx
 import { useEffect, useRef, useState } from "react";
 import DeleteIcon from "../icons/DeleteIcon";
-import ShareIcon from "../icons/ShareIcon";
+import OpenIcon from "../icons/ShareIcon";
+import WhatsAppIcon from "../icons/Whatsapp";
 import ConfirmModal from "./ConfirmModel";
 
 declare global {
@@ -119,8 +120,18 @@ export default function Card({ id, title, link, type, onDelete }: CardProps) {
           </span>
         </div>
         <div className="flex space-x-3 text-gray-500 dark:text-gray-300 mt-1">
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(`${title}\n${link}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Share on WhatsApp"
+          >
+            <WhatsAppIcon />
+          </a>
+
+
           <a href={link} target="_blank" rel="noopener noreferrer" title="Open">
-            <ShareIcon />
+            <OpenIcon />
           </a>
           <button onClick={() => setConfirmOpen(true)} title="Delete">
             <DeleteIcon />
