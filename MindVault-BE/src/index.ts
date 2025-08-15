@@ -38,57 +38,6 @@ configurePassport();
 // Auth routes
 app.use('/api/v1/auth', authRoutes);
 
-// app.post('/api/v1/signup', async (req, res) => {
-//     const username = req.body.username;
-//     const password = req.body.password;
-//     const email = req.body.email;
-
-//     try {
-//       const newUser = await userModel.create({
-//             username: username,
-//             password: password,
-//             email: email
-//         })
-//         const token = jwt.sign({
-//             id: newUser._id,
-//         }, JWT_PASSWORD);
-
-//         // console.log(token);
-        
-//            res.json({
-//            token: `Bearer ${token}`,
-//            message: 'User created successfully',
-//             });
-
-//     } catch (e) {
-//         res.status(411).json({
-//             message: 'User already exists',
-//         })
-//     }
-// });
-
-
-// app.post('/api/v1/signin', async (req, res) => {
-//     const { username, password } = req.body;
-//     const existingUser = await userModel.findOne({
-//         username,
-//         password
-//     });
-//     if (existingUser) {
-//         const token = jwt.sign({
-//             id: existingUser._id,
-//         }, JWT_PASSWORD);
-//         res.json({
-//           token: `Bearer ${token}`,
-//         });
-//     } else {
-//         res.status(401).json({
-//             message: 'Invalid username or password',
-//         });
-//     }
-// });
-
-
 app.post('/api/v1/content', userMiddleware, async (req, res) => {
     const type = req.body.type;
     const link = req.body.link;
