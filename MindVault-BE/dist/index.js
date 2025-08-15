@@ -13,62 +13,79 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const db_1 = require("./db");
-const conf_1 = require("./conf");
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const middleware_1 = require("./middleware");
 const utils_1 = require("./utils");
+const auth_1 = __importDefault(require("./auth"));
 const cors_1 = __importDefault(require("cors"));
 const path_1 = __importDefault(require("path"));
+const passport_1 = __importDefault(require("passport"));
+const express_session_1 = __importDefault(require("express-session"));
+const passport_2 = require("./passport");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)());
 app.use(express_1.default.static(path_1.default.join(__dirname, 'build')));
-app.post('/api/v1/signup', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const username = req.body.username;
-    const password = req.body.password;
-    const email = req.body.email;
-    try {
-        const newUser = yield db_1.userModel.create({
-            username: username,
-            password: password,
-            email: email
-        });
-        const token = jsonwebtoken_1.default.sign({
-            id: newUser._id,
-        }, conf_1.JWT_PASSWORD);
-        // console.log(token);
-        res.json({
-            token: `Bearer ${token}`,
-            message: 'User created successfully',
-        });
-    }
-    catch (e) {
-        res.status(411).json({
-            message: 'User already exists',
-        });
+// Session setup for Passport
+app.use((0, express_session_1.default)({
+    secret: process.env.SESSION_SECRET || 'your_session_secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
-app.post('/api/v1/signin', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { username, password } = req.body;
-    const existingUser = yield db_1.userModel.findOne({
-        username,
-        password
-    });
-    if (existingUser) {
-        const token = jsonwebtoken_1.default.sign({
-            id: existingUser._id,
-        }, conf_1.JWT_PASSWORD);
-        res.json({
-            token: `Bearer ${token}`,
-        });
-    }
-    else {
-        res.status(401).json({
-            message: 'Invalid username or password',
-        });
-    }
-}));
+// Initialize Passport
+app.use(passport_1.default.initialize());
+app.use(passport_1.default.session());
+(0, passport_2.configurePassport)();
+// Auth routes
+app.use('/api/v1/auth', auth_1.default);
+// app.post('/api/v1/signup', async (req, res) => {
+//     const username = req.body.username;
+//     const password = req.body.password;
+//     const email = req.body.email;
+//     try {
+//       const newUser = await userModel.create({
+//             username: username,
+//             password: password,
+//             email: email
+//         })
+//         const token = jwt.sign({
+//             id: newUser._id,
+//         }, JWT_PASSWORD);
+//         // console.log(token);
+//            res.json({
+//            token: `Bearer ${token}`,
+//            message: 'User created successfully',
+//             });
+//     } catch (e) {
+//         res.status(411).json({
+//             message: 'User already exists',
+//         })
+//     }
+// });
+// app.post('/api/v1/signin', async (req, res) => {
+//     const { username, password } = req.body;
+//     const existingUser = await userModel.findOne({
+//         username,
+//         password
+//     });
+//     if (existingUser) {
+//         const token = jwt.sign({
+//             id: existingUser._id,
+//         }, JWT_PASSWORD);
+//         res.json({
+//           token: `Bearer ${token}`,
+//         });
+//     } else {
+//         res.status(401).json({
+//             message: 'Invalid username or password',
+//         });
+//     }
+// });
 app.post('/api/v1/content', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const type = req.body.type;
     const link = req.body.link;

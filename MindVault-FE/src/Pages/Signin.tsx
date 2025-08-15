@@ -11,6 +11,7 @@ import { Label } from "../components/custom/Label";
 import { Link } from "react-router-dom";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import GoogleOAuthButton from "../components/OAuth/GoogleOAuthButton";
 const SignIn = () => {
     const usernameRef = useRef<HTMLInputElement>();
     const passwordRef = useRef<HTMLInputElement>();
@@ -27,7 +28,6 @@ const SignIn = () => {
                  username,
                  password
           })
-        
           // const jwt = response.data.token;
           localStorage.setItem("token", response.data.token);
           localStorage.setItem("user", username ?? "");
@@ -55,6 +55,7 @@ const SignIn = () => {
             <Button onClick={signin} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
               Sign In
             </Button>
+            <GoogleOAuthButton/>
             <div className="text-center text-sm text-gray-600">
               Don't have an account?{" "}
               <Link to="/signup" className="text-blue-600 hover:underline">

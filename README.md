@@ -43,10 +43,29 @@ LinkNest is a second-brain web app that helps you **save**, **organize**, and **
 # Clone the repo
 git clone https://github.com/ayushsoni02/LinkNest.git
 cd LinkNest
+```
 
 # Install frontend dependencies
+```bash
 cd client
 npm install
+```
 
 # Run frontend
+```bash
 npm run dev
+```
+
+### Environment Configuration
+
+#### **Backend (.env) MindVault-BE**
+- **GOOGLE_CLIENT_ID**=your-google-client-id 
+- **GOOGLE_CLIENT_SECRET**=your-google-client-secret 
+- **JWT_PASSWORD**=your-jwt-secret 
+- **SESSION_SECRET**=your-session-secret 
+- **FRONTEND_URL**=http://localhost:5173 (or your deployed frontend URL) 
+- **BACKEND_URL**=http://localhost:3000 (or your deployed backend URL)
+
+#### **Frontend (Config.tsx)**
+- **BACKEND_URL**=http://localhost:3000 (or your deployed backend URL) 
+- **FRONTEND_URL**=http://localhost:5173 (or your deployed frontend URL)
