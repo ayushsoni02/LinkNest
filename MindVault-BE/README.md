@@ -1,6 +1,7 @@
-# LinkNest Backend API with Google OAuth
+## This readme mainly focus on implementation of oauth of Google through passport
+## LinkNest Backend API with Google OAuth
 
-## Authentication API
+### Authentication API
 
 The LinkNest backend now supports both traditional JWT authentication and Google OAuth.
 
