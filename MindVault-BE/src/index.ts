@@ -8,7 +8,7 @@ import { JWT_PASSWORD } from './conf';
 dotenv.config();
 import { userMiddleware } from './middleware';
 import { random } from './utils';
-import authRoutes from "./auth";
+import { authRoutes } from "./auth";
 import cors from "cors";
 import path from "path";
 import passport from 'passport';
