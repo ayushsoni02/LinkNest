@@ -15,6 +15,7 @@ const UserSchema = new Schema({
   
     username: {type: String,unique:true},
     password: String,
+    googleId: { type: String, unique: true, sparse: true },
 });
 
 export const userModel = mongoose.model('users', UserSchema);

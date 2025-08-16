@@ -2,69 +2,41 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { ContentModel, linkModel, userModel } from './db';
-
+import dotenv from 'dotenv';
 import { JWT_PASSWORD } from './conf';
 
+dotenv.config();
 import { userMiddleware } from './middleware';
 import { random } from './utils';
+import authRoutes from "./auth"
 import cors from "cors";
 import path from "path";
+import passport from 'passport';
+import session from 'express-session';
+import { configurePassport } from './passport';
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'build')));
 
-app.post('/api/v1/signup', async (req, res) => {
-    const username = req.body.username;
-    const password = req.body.password;
-    const email = req.body.email;
-
-    try {
-      const newUser = await userModel.create({
-            username: username,
-            password: password,
-            email: email
-        })
-        const token = jwt.sign({
-            id: newUser._id,
-        }, JWT_PASSWORD);
-
-        // console.log(token);
-        
-           res.json({
-           token: `Bearer ${token}`,
-           message: 'User created successfully',
-            });
-
-    } catch (e) {
-        res.status(411).json({
-            message: 'User already exists',
-        })
+// Session setup for Passport
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'your_session_secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
-});
+}));
+  
+  // Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
+configurePassport();
 
-
-app.post('/api/v1/signin', async (req, res) => {
-    const { username, password } = req.body;
-    const existingUser = await userModel.findOne({
-        username,
-        password
-    });
-    if (existingUser) {
-        const token = jwt.sign({
-            id: existingUser._id,
-        }, JWT_PASSWORD);
-        res.json({
-          token: `Bearer ${token}`,
-        });
-    } else {
-        res.status(401).json({
-            message: 'Invalid username or password',
-        });
-    }
-});
-
+// Auth routes
+app.use('/api/v1/auth', authRoutes);
 
 app.post('/api/v1/content', userMiddleware, async (req, res) => {
     const type = req.body.type;

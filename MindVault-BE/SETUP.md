@@ -53,3 +53,13 @@
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
+
+## Setup for Google OAuth
+Just to need add some more variables in .env file.
+For more information refer **README.md** inside `MindVault-BE`
+### Google OAuth credentials
+- GOOGLE_CLIENT_ID=`your_google_client_id_here`
+- GOOGLE_CLIENT_SECRET=`your_google_client_secret_here`
+
+### express-session
+- SESSION_SECRET=`your_session_secret_here`

@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import { BACKEND_URL } from "./Config"
 import { ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import OAuthCallback from "./Pages/OAuthCallback"
 
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
       <Route path="/Dashboard" element={<Dashboard/>}/>
       <Route path="/about" element={<About />} />
       <Route path="/features" element={<Features />} />
+      <Route path="oauth-callback" element={<OAuthCallback/>}/>
     </Routes>
   </BrowserRouter>
   

@@ -11,6 +11,7 @@ import axios from "axios";
 import { BACKEND_URL } from "../Config";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import GoogleOAuthButton from "../components/OAuth/GoogleOAuthButton";
 const SignUp = () => {
 
    const usernameRef = useRef<HTMLInputElement>();
@@ -60,6 +61,7 @@ const SignUp = () => {
             <Button onClick={signup} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
               Create Account
             </Button>
+            <GoogleOAuthButton/>
             <div className="text-center text-sm text-gray-600">
               Already have an account?{" "}
               <Link to="/signin" className="text-blue-600 hover:underline">
