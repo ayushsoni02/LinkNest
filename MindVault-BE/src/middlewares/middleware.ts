@@ -18,9 +18,16 @@
 // };
 
 
+
 import jwt from 'jsonwebtoken';
-import { JWT_PASSWORD } from './conf';
 import { NextFunction, Request, Response } from 'express';
+import { userModel } from '../models/user.model';
+
+
+const ACCESS_TOKEN_SECRET: string = process.env.ACCESS_TOKEN_SECRET ?? '';
+if (!ACCESS_TOKEN_SECRET) {
+  throw new Error('ACCESS_TOKEN_SECRET is not configured');
+}
 
 export const userMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -35,12 +42,25 @@ export const userMiddleware = (req: Request, res: Response, next: NextFunction) 
       ? authHeader.split(' ')[1]
       : authHeader;
 
-    const decoded = jwt.verify(token, JWT_PASSWORD) as jwt.JwtPayload;
 
-    if (decoded && typeof decoded === "object") {
-      // @ts-ignore
-      req.userId = decoded.id;
-      next(); // continue to next middleware
+  const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET) as jwt.JwtPayload;
+
+
+    if (decoded && typeof decoded === "object" && decoded._id) {
+      userModel.findById(decoded._id)
+        .then(user => {
+          if (!user) {
+            res.status(401).json({ message: 'Unauthorized: User not found' });
+            return;
+          }
+          // @ts-ignore
+          req.user = user;
+          next();
+        })
+        .catch(err => {
+          console.error("User fetch error:", err);
+          res.status(500).json({ message: 'Internal server error' });
+        });
     } else {
       res.status(401).json({ message: 'Unauthorized: Invalid token structure' });
     }

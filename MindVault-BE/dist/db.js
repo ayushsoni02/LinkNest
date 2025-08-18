@@ -15,7 +15,6 @@ mongoose_1.default.connect(mongoUrl);
 const UserSchema = new Schema({
     username: { type: String, unique: true },
     password: String,
-    googleId: { type: String, unique: true, sparse: true },
 });
 exports.userModel = mongoose_1.default.model('users', UserSchema);
 const ContentSchema = new Schema({
