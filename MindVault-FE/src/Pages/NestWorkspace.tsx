@@ -7,52 +7,34 @@ import {
     Send, 
     Bot, 
     User, 
-    Search,
-    ChevronLeft
+    Search
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import SmartLinkCard from "../components/SmartLinkCard";
-
-// Dummy Data for demonstration
-const dummyLinks = [
-    {
-        title: "Understanding React Server Components",
-        url: "https://react.dev",
-        type: "article" as const,
-        date: "Oct 24, 2024",
-        tags: ["React", "WebDev"],
-        summary: "Deep dive into RSC architecture.",
-        icon: "📄"
-    },
-    {
-        title: "Building a SaaS with Next.js 14",
-        url: "https://youtube.com",
-        type: "youtube" as const,
-        date: "Nov 12, 2024",
-        thumbnailUrl: "https://i.ytimg.com/vi/W5teEht1bV8/hqdefault.jpg",
-        tags: ["SaaS", "NextJS"],
-        summary: "Complete walkthrough of building a modern SaaS.",
-        icon: "📺"
-    },
-    {
-        title: "AI Agents Future",
-        url: "https://twitter.com",
-        type: "twitter" as const,
-        date: "Dec 15, 2024",
-        thumbnailUrl: "https://pbs.twimg.com/profile_images/1683325380441128960/yRsRRjGO_400x400.jpg",
-        tags: ["AI", "Future"],
-        summary: "Autonomous agents will revolutionize software.",
-        icon: "🐦"
-    }
-];
+import { useNests } from "../hooks/useNests";
+import { useContent } from "../hooks/UseContent";
 
 export default function NestWorkspace() {
     const { id } = useParams();
     const [viewMode, setViewMode] = useState<'gallery' | 'chat'>('gallery');
-    const [messages, setMessages] = useState([
-        { role: 'ai', content: `Hello! I've analyzed the links in your "${id?.replace('-', ' ')}" Nest. Ask me anything about React Server Components or SaaS building.` }
-    ]);
     const [input, setInput] = useState("");
+    
+    // Get nest and content data from API
+    const { nests } = useNests();
+    const { contents } = useContent();
+    
+    const nest = nests.find(n => n._id === id);
+    const nestLinks = contents.filter(c => c.nestId?._id === id);
+    
+    // Initialize with AI greeting
+    const [messages, setMessages] = useState([
+        { 
+            role: 'ai', 
+            content: nest 
+                ? `Hello! I've analyzed the ${nestLinks.length} link${nestLinks.length !== 1 ? 's' : ''} in your "${nest.name}" nest. Ask me anything about the content here.` 
+                : 'Hello! How can I help you today?'
+        }
+    ]);
 
     const handleSend = () => {
         if (!input.trim()) return;
@@ -73,10 +55,10 @@ export default function NestWorkspace() {
                 <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-6 bg-white dark:bg-zinc-900/50 backdrop-blur-sm sticky top-0 z-10">
                     <div className="flex items-center gap-4">
                         <h1 className="text-xl font-bold text-zinc-900 dark:text-white capitalize">
-                            {id?.replace('-', ' ') || "Nest Workspace"}
+                        {nest?.name}
                         </h1>
                         <span className="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 text-xs rounded-full border border-zinc-200 dark:border-zinc-700">
-                            {dummyLinks.length} items
+                            {nestLinks.length} items
                         </span>
                     </div>
 
@@ -113,8 +95,18 @@ export default function NestWorkspace() {
                         /* Gallery View */
                         <div className="h-full overflow-y-auto p-6 lg:p-10">
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 max-w-7xl mx-auto">
-                                {dummyLinks.map((link, idx) => (
-                                    <SmartLinkCard key={idx} {...link} />
+                                {nestLinks.map((link) => (
+                                    <SmartLinkCard 
+                                        key={link._id} 
+                                        id={link._id}
+                                        title={link.title}
+                                        url={link.link}
+                                        type={link.type}
+                                        tags={link.tags}
+                                        date={new Date(link.createdAt).toLocaleDateString()}
+                                        summary={link.nestId?.name || 'No summary'}
+                                        currentNestId={link.nestId?._id || null}
+                                    />
                                 ))}
                             </div>
                         </div>
@@ -134,12 +126,12 @@ export default function NestWorkspace() {
                                     </div>
                                 </div>
                                 <div className="p-2 space-y-1">
-                                    {dummyLinks.map((link, idx) => (
-                                        <div key={idx} className="flex items-start gap-3 p-3 hover:bg-white dark:hover:bg-zinc-800 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 group">
-                                            <div className="mt-0.5 text-lg opacity-70 group-hover:opacity-100">{link.icon}</div>
+                                    {nestLinks.map((link) => (
+                                        <div key={link._id} className="flex items-start gap-3 p-3 hover:bg-white dark:hover:bg-zinc-800 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 group">
+                                            <div className="mt-0.5 text-lg opacity-70 group-hover:opacity-100">📁</div>
                                             <div className="overflow-hidden">
                                                 <h4 className="text-sm font-medium text-zinc-700 dark:text-zinc-200 truncate">{link.title}</h4>
-                                                <p className="text-xs text-zinc-500 truncate">{link.url}</p>
+                                                <p className="text-xs text-zinc-500 truncate">{link.link}</p>
                                             </div>
                                         </div>
                                     ))}

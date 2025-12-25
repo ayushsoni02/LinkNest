@@ -1,121 +1,152 @@
 import { useState, Fragment } from 'react';
-import { Dialog, Transition } from '@headlessui/react';
-import { Share2, Trash2, ExternalLink, X, Calendar, Hash, MoreVertical, PlayCircle, FileText } from 'lucide-react';
+import { Dialog, Transition, Menu } from '@headlessui/react';
+import { Share2, Trash2, ExternalLink, X, PlayCircle, MoreVertical, Check } from 'lucide-react';
+import { useNests } from '../hooks/useNests';
+import axios from 'axios';
+import { BACKEND_URL } from '../Config';
 
 interface SmartLinkCardProps {
+  id: string;
   title: string;
   url: string;
-  type: 'youtube' | 'twitter' | 'article';
-  tags: string[];
-  date: string;
-  summary: string;     // Short summary for card
-  fullSummary?: string; // Long summary for slide-over
-  thumbnailUrl?: string; // For videos/media
-  onDelete?: () => void;
+  type: string;
+  tags?: string[];
+  date?: string;
+  summary?: string;     
+  fullSummary?: string; 
+  thumbnailUrl?: string;
+  currentNestId?: string | null;
+  onDelete?: (id: string) => void;
   onShare?: () => void;
 }
 
 export default function SmartLinkCard({
+  id,
   title,
   url,
   type,
-  tags,
-  date,
-  summary,
+  tags = [],
+  date = new Date().toLocaleDateString(),
+  summary = "No summary available for this content.",
   fullSummary,
   thumbnailUrl,
+  currentNestId,
   onDelete,
   onShare
 }: SmartLinkCardProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { nests } = useNests();
 
-  // Helper to determine icon based on type
-  const getTypeIcon = () => {
-    switch (type) {
-      case 'youtube': return <PlayCircle size={16} className="text-red-500" />;
-      case 'twitter': return <span className="text-blue-400 font-bold text-xs">𝕏</span>;
-      default: return <FileText size={16} className="text-zinc-500" />;
+  const handleMoveToNest = async (nestId: string | null) => {
+    try {
+      await axios.put(`${BACKEND_URL}/api/v1/content/${id}`, 
+        { nestId },
+        { headers: { Authorization: localStorage.getItem('token') || '' } }
+      );
+      window.location.reload(); // Refresh to show changes
+    } catch (error) {
+      console.error('Error moving to nest:', error);
+      alert('Failed to move content to nest');
     }
   };
 
+  // Helper to extract YouTube Thumbnail if not provided
+  const getThumbnail = () => {
+    if (thumbnailUrl) return thumbnailUrl;
+    if (type === 'youtube' && url) {
+       const parts = url.split('v=');
+       const videoId = parts.length > 1 ? parts[1].split('&')[0] : null;
+       if (videoId) return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+    }
+    return null;
+  };
+
+  const finalThumbnail = getThumbnail();
+  const isMediaCard = (type === 'youtube' || type === 'twitter') && finalThumbnail;
+
   return (
     <>
-      {/* --- Collapsed Card View --- */}
       <div 
         onClick={() => setIsOpen(true)}
-        className="group relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:scale-[1.01] transition-all duration-300 cursor-pointer flex flex-col h-full overflow-hidden"
+        className="group relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full overflow-hidden"
       >
-        {/* Header: Title, Date, Actions */}
-        <div className="flex justify-between items-start mb-3">
-          <div className="flex-1 pr-3">
-             <div className="flex items-center gap-2 mb-1">
-                {getTypeIcon()}
-                <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">{date}</span>
-             </div>
-             <h3 className="font-semibold text-zinc-800 dark:text-zinc-100 leading-snug line-clamp-2 group-hover:text-indigo-600 transition-colors">
-               {title}
-             </h3>
-          </div>
-          
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button 
-                onClick={(e) => { e.stopPropagation(); onShare?.(); }}
-                className="p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-zinc-100 rounded-md transition-colors"
-            >
-              <Share2 size={16} />
-            </button>
-            <button 
-                onClick={(e) => { e.stopPropagation(); onDelete?.(); }}
-                className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-zinc-100 rounded-md transition-colors"
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-        </div>
+        <div className="flex gap-4 h-full">
+            {/* Left: Thumbnail for Media Types */}
+            {isMediaCard && (
+                <div className="w-1/3 shrink-0 relative rounded-2xl overflow-hidden aspect-video bg-zinc-100">
+                    <img src={finalThumbnail} alt="Thumbnail" className="w-full h-full object-cover" />
+                    {type === 'youtube' && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-all">
+                             <div className="w-10 h-10 bg-white/90 rounded-full flex items-center justify-center pl-1 shadow-md">
+                                <PlayCircle size={20} className="text-zinc-900" />
+                             </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
-        {/* Content Body */}
-        <div className="flex-1 flex gap-4">
-          {/* Media Split Layout for YouTube/Twitter */}
-          {(type === 'youtube' || type === 'twitter') && thumbnailUrl ? (
-             <>
-               <div className="w-2/5 shrink-0 bg-zinc-100 rounded-lg overflow-hidden relative aspect-video self-start mt-1">
-                  <img src={thumbnailUrl} alt="Thumbnail" className="w-full h-full object-cover" />
-                  {type === 'youtube' && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-all">
-                          <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center pl-0.5 shadow-sm">
-                              <PlayCircle size={16} className="text-zinc-900" />
-                          </div>
-                      </div>
-                  )}
-               </div>
-               <div className="w-3/5">
-                 <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed line-clamp-4">
-                   {summary}
-                 </p>
-               </div>
-             </>
-          ) : (
-            /* Full Text Layout for Articles */
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed line-clamp-4">
-               {summary}
-            </p>
-          )}
-        </div>
+            {/* Right: Content */}
+            <div className={`flex flex-col justify-between ${isMediaCard ? 'w-2/3' : 'w-full'}`}>
+                <div>
+                     {/* Header: Date & Title */}
+                    <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1 pr-2">
+                            <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-100 leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                                {title}
+                            </h3>
+                             <p className="text-xs font-semibold text-zinc-400 mt-1 uppercase tracking-wider">{date}</p>
+                        </div>
+                        
+                        {/* Hover Actions */}
+                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); onShare?.(); }}
+                                className="p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-zinc-100 rounded-full transition-colors"
+                            >
+                                <Share2 size={16} />
+                            </button>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); onDelete?.(id); }}
+                                className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-zinc-100 rounded-full transition-colors"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
+                    </div>
 
-        {/* Footer: Tags */}
-        <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center gap-2 overflow-x-auto no-scrollbar">
-           {tags.map((tag, i) => (
-             <span key={i} className="px-2 py-1 bg-zinc-50 dark:bg-zinc-800 text-zinc-500 text-[10px] font-medium uppercase tracking-wide rounded-md whitespace-nowrap">
-               #{tag}
-             </span>
-           ))}
+                    {/* Summary Lines */}
+                    {!isMediaCard && (
+                         <div className="mb-4">
+                            <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed line-clamp-3">
+                                {summary}
+                                <span className="opacity-20 block mt-1 w-2/3 h-2 bg-zinc-300 rounded"></span>
+                                <span className="opacity-20 block mt-1 w-1/2 h-2 bg-zinc-300 rounded"></span>
+                            </p>
+                        </div>
+                    )}
+                </div>
+                
+                {/* Footer: Tags */}
+                <div className="flex flex-wrap gap-2 mt-auto">
+                    {tags && tags.length > 0 ? tags.map((tag, i) => (
+                        <span key={i} className="px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 text-[10px] font-bold uppercase tracking-wide rounded-full">
+                            #{tag}
+                        </span>
+                    )) : (
+                       <>
+                         <span className="px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 text-[10px] font-bold uppercase tracking-wide rounded-full">
+                            #{type}
+                        </span>
+                       </>
+                    )}
+                </div>
+            </div>
         </div>
       </div>
 
-      {/* --- Expanded Slide-over Panel --- */}
-      <Transition appear show={isOpen} as={Fragment}>
+       {/* --- Expanded Slide-over Panel (Keeping existing logic) --- */}
+       <Transition appear show={isOpen} as={Fragment}>
         <Dialog as="div" className="relative z-50" onClose={() => setIsOpen(false)}>
-          {/* Backdrop */}
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -128,7 +159,6 @@ export default function SmartLinkCard({
             <div className="fixed inset-0 bg-black/20 dark:bg-black/50 backdrop-blur-sm" />
           </Transition.Child>
 
-          {/* Slide-over Panel */}
           <div className="fixed inset-0 overflow-hidden">
             <div className="absolute inset-0 overflow-hidden">
               <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
@@ -174,15 +204,13 @@ export default function SmartLinkCard({
                       {/* Panel Body */}
                       <div className="flex-1 overflow-y-auto px-6 py-6">
                          
-                         {/* Thumbnail in expanded view if exists */}
-                         {thumbnailUrl && (
+                         {finalThumbnail && (
                              <div className="mb-6 rounded-xl overflow-hidden border border-zinc-200 shadow-sm">
-                                 <img src={thumbnailUrl} alt="Thumbnail Preview" className="w-full object-cover" />
+                                 <img src={finalThumbnail} alt="Thumbnail Preview" className="w-full object-cover" />
                              </div>
                          )}
 
                          <div className="space-y-8">
-                             {/* AI Summary Section */}
                              <section>
                                  <h4 className="flex items-center gap-2 text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider mb-3">
                                      <span className="p-1 bg-indigo-100 text-indigo-600 rounded">✨</span> 
@@ -193,7 +221,6 @@ export default function SmartLinkCard({
                                  </p>
                              </section>
 
-                             {/* Key Takeaways (Simulated for now) */}
                              <section>
                                  <h4 className="flex items-center gap-2 text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider mb-3">
                                      <span className="p-1 bg-emerald-100 text-emerald-600 rounded">🧠</span> 
@@ -208,7 +235,6 @@ export default function SmartLinkCard({
                                  </ul>
                              </section>
 
-                             {/* Metadata */}
                              <div className="flex flex-wrap gap-2 pt-4 border-t border-zinc-100">
                                  {tags.map((tag, i) => (
                                      <span key={i} className="px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 text-xs rounded-full">
@@ -219,22 +245,66 @@ export default function SmartLinkCard({
                          </div>
                       </div>
 
-                      {/* Panel Footer */}
                       <div className="flex flex-shrink-0 justify-between px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-                        <button
-                          type="button"
-                          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-300 rounded-lg shadow-sm hover:bg-zinc-50 focus:outline-none"
-                        >
-                           Move to Nest
-                           <MoreVertical size={14} className="text-zinc-400" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setIsOpen(false)} // Close for now, maybe custom action later
+                        <Menu as="div" className="relative inline-block text-left">
+                          <Menu.Button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-700 focus:outline-none">
+                            Move to Nest
+                            <MoreVertical size={14} className="text-zinc-400" />
+                          </Menu.Button>
+
+                          <Transition
+                            as={Fragment}
+                            enter="transition ease-out duration-100"
+                            enterFrom="transform opacity-0 scale-95"
+                            enterTo="transform opacity-100 scale-100"
+                            leave="transition ease-in duration-75"
+                            leaveFrom="transform opacity-100 scale-100"
+                            leaveTo="transform opacity-0 scale-95"
+                          >
+                            <Menu.Items className="absolute bottom-full left-0 mb-2 w-56 origin-bottom-left rounded-md bg-white dark:bg-zinc-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none max-h-60 overflow-y-auto">
+                              <div className="py-1">
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      onClick={() => handleMoveToNest(null)}
+                                      className={`${
+                                        active ? 'bg-zinc-100 dark:bg-zinc-700' : ''
+                                      } group flex w-full items-center justify-between px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200`}
+                                    >
+                                      <span>Uncategorized</span>
+                                      {currentNestId === null && <Check size={16} className="text-indigo-600" />}
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                                
+                                {nests.map((nest) => (
+                                  <Menu.Item key={nest._id}>
+                                    {({ active }) => (
+                                      <button
+                                        onClick={() => handleMoveToNest(nest._id)}
+                                        className={`${
+                                          active ? 'bg-zinc-100 dark:bg-zinc-700' : ''
+                                        } group flex w-full items-center justify-between px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200`}
+                                      >
+                                        <span>📁 {nest.name}</span>
+                                        {currentNestId === nest._id && <Check size={16} className="text-indigo-600" />}
+                                      </button>
+                                    )}
+                                  </Menu.Item>
+                                ))}
+                              </div>
+                            </Menu.Items>
+                          </Transition>
+                        </Menu>
+                        
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
                           className="inline-flex justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none"
                         >
                           Read Full Article
-                        </button>
+                        </a>
                       </div>
                     </div>
                   </Dialog.Panel>

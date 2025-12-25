@@ -2,8 +2,16 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { BACKEND_URL } from "../Config";
 
-// Define Content type for type safety
-export type Content = { _id: string; title: string; type: string; link: string };
+// Updated Content type to match backend schema
+export type Content = { 
+    _id: string; 
+    title: string; 
+    type: string; 
+    link: string;
+    tags: string[];
+    nestId: { _id: string; name: string; description?: string } | null;
+    createdAt: string;
+};
 
 export function useContent(){
    const [contents,setContents] = useState<Content[]>([]);

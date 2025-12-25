@@ -23,7 +23,7 @@ const ProfileDropdown = ({ username, onLogout }) => {
         <ChevronDown className="w-4 h-4 text-gray-500" />
       </Menu.Button>
 
-      <Menu.Items className=" dark:bg-gray-900 text-black dark:text-white absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
+      <Menu.Items className=" dark:bg-gray-900 text-black dark:text-white absolute left-0 bottom-full mb-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
         <div className="py-1">
           <Menu.Item>
             {({ active }) => (

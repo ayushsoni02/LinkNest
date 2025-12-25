@@ -1,197 +1,197 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import Logo from "../icons/Logo";
 import SidebarItem from "./SidebarItem";
 import { 
-  ChevronRight, 
-  ChevronLeft, 
   LayoutGrid, 
   Newspaper, 
   Youtube, 
-  Hash, 
-  Folder, 
-  Plus, 
-  LogOut 
+  Twitter,
+  Plus,
+  FolderOpen
 } from "lucide-react";
-import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import ProfileDropdown from "./ProfileDropdown";
+import CreateNestModal from "./CreateNestModal";
+import { useNests } from "../hooks/useNests";
+import { useContent } from "../hooks/UseContent";
 
 type SidebarProps = {
   className?: string;
-  onFilterChange?: (tag: string | null) => void;
+  onFilterChange?: (filter: { type: string; value: string | null }) => void;
 };
 
 export default function Sidebar({ className, onFilterChange }: SidebarProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [activeItem, setActiveItem] = useState("All");
   const navigate = useNavigate();
+  const location = useLocation();
+  const [activeItem, setActiveItem] = useState("All");
+  const [createNestOpen, setCreateNestOpen] = useState(false);
 
-  const toggleSidebar = () => setIsExpanded(!isExpanded);
+  // Fetch nests and content from API
+  const { nests, createNest } = useNests();
+  const { contents } = useContent();
+
+  // Getting user from localStorage if available
+  const userString = localStorage.getItem("user");
+  let user = { username: "User" };
+  try {
+    if (userString) {
+      user = JSON.parse(userString);
+    }
+  } catch (e) {
+    console.error("Failed to parse user data", e);
+    localStorage.removeItem("user");
+  }
 
   function logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    toast.info("Logged out successfully");
     navigate("/signin");
   }
 
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 1024) { // Changed to 1024px for tablet handling
-        setIsExpanded(false);
-      } else {
-        setIsExpanded(true);
-      }
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const handleFilter = (tag: string | null, itemName: string) => {
+  const handleFilter = (filterType: string, filterValue: string | null, itemName: string) => {
     setActiveItem(itemName);
-    if (onFilterChange) onFilterChange(tag);
+    
+    // If not on dashboard, navigate to dashboard with filter preference
+    if (location.pathname !== "/Dashboard") {
+      navigate("/Dashboard", { state: { filterType, filterValue, itemName } });
+    } else {
+      // If already on dashboard, just filter
+      if (onFilterChange) onFilterChange({ type: filterType, value: filterValue });
+    }
   };
+
+  const handleCreateNest = async (nestData: { name: string; icon: string; color: string; description: string }) => {
+    try {
+      await createNest({ name: nestData.name, description: nestData.description });
+    } catch (error) {
+      alert("Failed to create nest");
+    }
+  };
+
+  // Get dynamic tags and uncategorized count from API data
+  const allTags = [...new Set(contents.flatMap(c => c.tags))].sort();
+  const uncategorizedCount = contents.filter(c => c.nestId === null).length;
 
   return (
     <div
-      className={`${className} h-screen bg-zinc-50 border-r border-zinc-200 text-zinc-800 fixed top-14 left-0 transition-all duration-300 ease-in-out z-30 flex flex-col justify-between
-      ${isExpanded ? "w-64" : "w-20"}`}
+      className={`${className} h-screen bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 w-64 flex flex-col justify-between fixed top-0 left-0 z-30 transition-all duration-300`}
     >
+      <CreateNestModal 
+        open={createNestOpen} 
+        onClose={() => setCreateNestOpen(false)}
+        onCreate={handleCreateNest}
+      />
         
-      {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden pt-6">
+      {/* Content Area */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden pt-8 px-4">
         
-        {/* Header / Toggle */}
-        <div className={`flex items-center justify-between mb-8 px-4 ${!isExpanded && "justify-center"}`}>
-           {isExpanded ? (
-               <div className="flex items-center gap-2">
-                 <div className="text-indigo-600"><Logo /></div>
-                 <span className="text-xl font-bold text-zinc-800 tracking-tight">LinkNest</span>
-               </div>
-           ) : (
-             <div className="text-indigo-600"><Logo /></div>
-           )}
-           
-           {isExpanded && (
-            <button onClick={toggleSidebar} className="p-1.5 rounded-lg hover:bg-zinc-200 text-zinc-500 transition-colors">
-              <ChevronLeft size={20} />
-            </button>
-           )}
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-10 px-2">
+            <div className="text-indigo-600"><Logo /></div>
+            <span className="text-2xl font-bold font-serif text-zinc-900 dark:text-white tracking-tight">LinkNest</span>
         </div>
 
-        {/* Primary Sections */}
-        <div className="px-3 mb-6">
-          {isExpanded && <h3 className="px-3 text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Discover</h3>}
+        {/* Discover Section */}
+        <div className="mb-8">
+          <h3 className="px-3 text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3">Discover</h3>
           
           <SidebarItem 
             text="All Content" 
             icon={<LayoutGrid size={20} />} 
-            isExpanded={isExpanded} 
             isActive={activeItem === "All"}
-            onClick={() => handleFilter(null, "All")}
+            onClick={() => handleFilter("all", null, "All")}
           />
           <SidebarItem 
             text="Blogs/Articles" 
             icon={<Newspaper size={20} />} 
-            isExpanded={isExpanded} 
             isActive={activeItem === "Blogs"}
-            onClick={() => handleFilter("Blogs", "Blogs")}
+            onClick={() => handleFilter("content-type", "article", "Blogs")}
           />
           <SidebarItem 
-            text="Videos/Tutorials" 
+            text="Videos" 
             icon={<Youtube size={20} />} 
-            isExpanded={isExpanded} 
             isActive={activeItem === "Videos"}
-            onClick={() => handleFilter("Videos", "Videos")}
+            onClick={() => handleFilter("content-type", "youtube", "Videos")}
+          />
+          <SidebarItem 
+            text="X/Twitter" 
+            icon={<Twitter size={20} />} 
+            isActive={activeItem === "Twitter"}
+            onClick={() => handleFilter("content-type", "twitter", "Twitter")}
+          />
+          <SidebarItem 
+            text="Uncategorized" 
+            icon={<FolderOpen size={20} />} 
+            isActive={activeItem === "Uncategorized"}
+            onClick={() => handleFilter("uncategorized", null, "Uncategorized")}
+            badge={uncategorizedCount > 0 ? uncategorizedCount.toString() : undefined}
           />
         </div>
 
         {/* Tags Section */}
-        <div className="px-3 mb-6">
-           {isExpanded && <h3 className="px-3 text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Trending Tags</h3>}
+        <div className="mb-8">
+           <h3 className="px-3 text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3">Tags</h3>
            
-           <div className="space-y-1">
-             <SidebarItem 
-                text="#React" 
-                icon={<Hash size={18} />} 
-                isExpanded={isExpanded} 
-                isActive={activeItem === "#React"}
-                onClick={() => handleFilter("#React", "#React")}
-             />
-             <SidebarItem 
-                text="#Startup" 
-                icon={<Hash size={18} />} 
-                isExpanded={isExpanded} 
-                isActive={activeItem === "#Startup"}
-                onClick={() => handleFilter("#Startup", "#Startup")}
-             />
-             <SidebarItem 
-                text="#Design" 
-                icon={<Hash size={18} />} 
-                isExpanded={isExpanded} 
-                isActive={activeItem === "#Design"}
-                onClick={() => handleFilter("#Design", "#Design")}
-             />
-              <SidebarItem 
-                text="#Javascript" 
-                icon={<Hash size={18} />} 
-                isExpanded={isExpanded} 
-                isActive={activeItem === "#Javascript"}
-                onClick={() => handleFilter("#Javascript", "#Javascript")}
-             />
+           <div className="flex flex-wrap gap-2 px-2">
+             {allTags.slice(0, 8).map((tag) => (
+                <button
+                    key={tag}
+                    onClick={() => handleFilter("tag", tag, `#${tag}`)}
+                    className={`
+                        px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200
+                        ${activeItem === `#${tag}`
+                            ? "bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-900/30 dark:border-indigo-500/30 dark:text-indigo-400" 
+                            : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-zinc-600"
+                        }
+                    `}
+                >
+                    {tag}
+                </button>
+             ))}
            </div>
         </div>
 
         {/* Your Nests Section */}
-        <div className="px-3 mb-6">
-          {isExpanded && (
-             <div className="flex items-center justify-between px-3 mb-2">
-                 <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Your Nests</h3>
-                 <button className="text-zinc-400 hover:text-indigo-600 transition-colors">
-                     <Plus size={16} />
-                 </button>
-             </div>
-          )}
+        <div className="mb-4">
+          <div className="flex items-center justify-between px-3 mb-3">
+            <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Your Nests</h3>
+            <button
+              onClick={() => setCreateNestOpen(true)}
+              className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors group"
+              title="Create new nest"
+            >
+              <Plus size={14} className="text-zinc-400 group-hover:text-indigo-600" />
+            </button>
+          </div>
           
-          <SidebarItem 
-            text="Project Resources" 
-            icon={<Folder size={18} />} 
-            isExpanded={isExpanded} 
-            isActive={activeItem === "Project Resources"}
-            onClick={() => {
-                setActiveItem("Project Resources");
-                navigate("/nest/project-resources");
-            }}
-          />
-           <SidebarItem 
-            text="Read Later" 
-            icon={<Folder size={18} />} 
-            isExpanded={isExpanded} 
-            isActive={activeItem === "Read Later"}
-            onClick={() => {
-                setActiveItem("Read Later");
-                navigate("/nest/read-later");
-            }}
-          />
+          {nests.map((nest) => (
+            <SidebarItem 
+              key={nest._id}
+              text={nest.name} 
+              icon={
+                <div 
+                  className="w-5 h-5 rounded flex items-center justify-center text-sm"
+                  style={{ backgroundColor: '#6366f1' + '30' }}
+                >
+                  📁
+                </div>
+              } 
+              isActive={activeItem === nest.name}
+              onClick={() => {
+                setActiveItem(nest.name);
+                navigate(`/nest/${nest._id}`);
+              }}
+            />
+          ))}
         </div>
       </div>
 
-      {/* Footer / Logout */}
-      <div className="p-4 border-t border-zinc-200 bg-zinc-50">
-          <button 
-             onClick={logout}
-             className={`flex items-center gap-3 w-full p-2 rounded-lg text-zinc-600 hover:bg-zinc-200 hover:text-red-600 transition-all group ${!isExpanded && "justify-center"}`}
-          >
-              <LogOut size={20} className="group-hover:text-red-600" />
-              {isExpanded && <span className="font-medium text-sm">Logout</span>}
-          </button>
-           {!isExpanded && (
-            <button onClick={toggleSidebar} className="mt-4 w-full flex justify-center text-zinc-400 hover:text-zinc-600">
-              <ChevronRight size={20} />
-            </button>
-           )}
+      {/* Footer / Profile */}
+      <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center gap-3">
+             <ProfileDropdown username={user.username || "User"} onLogout={logout} />
+          </div>
       </div>
     </div>
   );
