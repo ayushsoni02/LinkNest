@@ -23,7 +23,7 @@ const SignUp = () => {
          const username = usernameRef.current?.value;
          const password = passwordRef.current?.value;
          const email = emailRef.current?.value;
-     const response = await axios.post(BACKEND_URL+"/api/v1/signup",{            
+     const response = await axios.post(BACKEND_URL+"/api/v1/auth/signup",{            
                 username,
                 password,
                 email

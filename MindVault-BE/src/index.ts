@@ -8,7 +8,7 @@ import { JWT_PASSWORD } from './conf';
 dotenv.config();
 import { userMiddleware } from './middleware';
 import { random } from './utils';
-import authRoutes  from "./auth";
+import authRoutes from "./auth";
 import cors from "cors";
 import path from "path";
 import passport from 'passport';
@@ -18,7 +18,7 @@ import { configurePassport } from './passport';
 const app = express();
 app.use(express.json());
 app.use(cors());
-app.use(express.static(path.join(__dirname, 'build')));
+// app.use(express.static(path.join(__dirname, 'build')));
 
 // Session setup for Passport
 app.use(session({
@@ -26,11 +26,11 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
-  
-  // Initialize Passport
+
+// Initialize Passport
 app.use(passport.initialize());
 app.use(passport.session());
 configurePassport();
@@ -41,10 +41,16 @@ app.use('/api/v1/auth', authRoutes);
 app.post('/api/v1/content', userMiddleware, async (req, res) => {
     const type = req.body.type;
     const link = req.body.link;
+    const title = req.body.title;
+    // @ts-ignore
+    const userId = req.userId;
+    console.log("Creating content for user:", userId);
+    console.log("Payload:", { type, link, title });
+
     await ContentModel.create({
         link,
         type,
-        title:req.body.title,
+        title: req.body.title,
         //@ts-ignore
         userId: req.userId,
         tags: [],
@@ -144,7 +150,7 @@ app.get('/api/v1/brain/:shareLink', async (req, res) => {
     });
 
     if (!user) {
-        res.status(404).json    ({
+        res.status(404).json({
             message: 'User not found',
         });
         return;
@@ -156,26 +162,26 @@ app.get('/api/v1/brain/:shareLink', async (req, res) => {
 });
 
 app.delete('/api/v1/content/:id', userMiddleware, async (req, res) => {
-  const contentId = req.params.id;
-  try {
-    await ContentModel.deleteOne({
-      _id: contentId,
-      // @ts-ignore
-      userId: req.userId
-    });
-    res.json({ message: 'Content deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to delete content' });
-  }
+    const contentId = req.params.id;
+    try {
+        await ContentModel.deleteOne({
+            _id: contentId,
+            // @ts-ignore
+            userId: req.userId
+        });
+        res.json({ message: 'Content deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ message: 'Failed to delete content' });
+    }
 });
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
-});
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'build', 'index.html'));
+// });
 
 
 app.get('/ping', (req, res) => {
-  res.send({ status: 'ok' });
+    res.send({ status: 'ok' });
 });
 
 app.listen(3000, () => {

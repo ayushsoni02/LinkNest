@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { userModel } from './db';
 import { JWT_PASSWORD } from './conf';
 import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
 
 // Define a custom type for the User with Passport that matches your Mongoose model
 interface User {
@@ -36,10 +37,12 @@ router.post('/signup', async (req: ExpressRequest, res: ExpressResponse) => {
   const password = req.body.password;
   const email = req.body.email;
 
+  const hashpassword = bcrypt.hashSync(password, 10);
+
   try {
     const newUser = await userModel.create({
       username: username,
-      password: password,
+      password: hashpassword,
       email: email
     });
 
@@ -60,24 +63,49 @@ router.post('/signup', async (req: ExpressRequest, res: ExpressResponse) => {
 
 // Regular sign-in route
 router.post('/signin', async (req: ExpressRequest, res: ExpressResponse) => {
-  const { username, password } = req.body;
-  const existingUser = await userModel.findOne({
-    username,
-    password
-  });
+  try {
+    const { username, password } = req.body;
 
-  if (existingUser) {
-    const token = jwt.sign({
-      id: existingUser._id,
-    }, JWT_PASSWORD);
+    // Check if username and password are provided
+    if (!username || !password) {
+      res.status(400).json({ error: 'Username and password are required' });
+      return;
+    }
 
-    res.json({
-      token: `Bearer ${token}`,
-    });
-  } else {
-    res.status(401).json({
-      message: 'Invalid username or password',
-    });
+    const existingUser = await userModel.findOne({ username });
+
+    // Check if user exists and has a password
+    if (!existingUser || !existingUser.password) {
+      res.status(401).json({ error: 'Invalid username or password' });
+      return;
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, existingUser.password);
+
+    if (isPasswordValid) {
+      const token = jwt.sign(
+        { id: existingUser._id },
+        process.env.JWT_SECRET || JWT_PASSWORD, // Make sure to use environment variable
+        { expiresIn: '1h' } // Add token expiration
+      );
+
+      res.json({
+        token: `Bearer ${token}`,
+        user: {
+          id: existingUser._id,
+          username: existingUser.username,
+          email: existingUser.email
+        }
+      });
+      return;
+    } else {
+      res.status(401).json({ error: 'Invalid username or password' });
+      return;
+    }
+  } catch (error) {
+    console.error('Signin error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+    return;
   }
 });
 

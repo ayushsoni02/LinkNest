@@ -17,16 +17,18 @@ const passport_1 = __importDefault(require("passport"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const db_1 = require("./db");
 const conf_1 = require("./conf");
+const bcrypt_1 = __importDefault(require("bcrypt"));
 const router = express_1.default.Router();
 // Regular sign-up route
 router.post('/signup', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const username = req.body.username;
     const password = req.body.password;
     const email = req.body.email;
+    const hashpassword = bcrypt_1.default.hashSync(password, 10);
     try {
         const newUser = yield db_1.userModel.create({
             username: username,
-            password: password,
+            password: hashpassword,
             email: email
         });
         const token = jsonwebtoken_1.default.sign({
@@ -45,23 +47,43 @@ router.post('/signup', (req, res) => __awaiter(void 0, void 0, void 0, function*
 }));
 // Regular sign-in route
 router.post('/signin', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { username, password } = req.body;
-    const existingUser = yield db_1.userModel.findOne({
-        username,
-        password
-    });
-    if (existingUser) {
-        const token = jsonwebtoken_1.default.sign({
-            id: existingUser._id,
-        }, conf_1.JWT_PASSWORD);
-        res.json({
-            token: `Bearer ${token}`,
-        });
+    try {
+        const { username, password } = req.body;
+        // Check if username and password are provided
+        if (!username || !password) {
+            res.status(400).json({ error: 'Username and password are required' });
+            return;
+        }
+        const existingUser = yield db_1.userModel.findOne({ username });
+        // Check if user exists and has a password
+        if (!existingUser || !existingUser.password) {
+            res.status(401).json({ error: 'Invalid username or password' });
+            return;
+        }
+        const isPasswordValid = yield bcrypt_1.default.compare(password, existingUser.password);
+        if (isPasswordValid) {
+            const token = jsonwebtoken_1.default.sign({ id: existingUser._id }, process.env.JWT_SECRET || conf_1.JWT_PASSWORD, // Make sure to use environment variable
+            { expiresIn: '1h' } // Add token expiration
+            );
+            res.json({
+                token: `Bearer ${token}`,
+                user: {
+                    id: existingUser._id,
+                    username: existingUser.username,
+                    email: existingUser.email
+                }
+            });
+            return;
+        }
+        else {
+            res.status(401).json({ error: 'Invalid username or password' });
+            return;
+        }
     }
-    else {
-        res.status(401).json({
-            message: 'Invalid username or password',
-        });
+    catch (error) {
+        console.error('Signin error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
     }
 }));
 // Google OAuth routes

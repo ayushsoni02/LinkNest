@@ -20,14 +20,13 @@ const middleware_1 = require("./middleware");
 const utils_1 = require("./utils");
 const auth_1 = __importDefault(require("./auth"));
 const cors_1 = __importDefault(require("cors"));
-const path_1 = __importDefault(require("path"));
 const passport_1 = __importDefault(require("passport"));
 const express_session_1 = __importDefault(require("express-session"));
 const passport_2 = require("./passport");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)());
-app.use(express_1.default.static(path_1.default.join(__dirname, 'build')));
+// app.use(express.static(path.join(__dirname, 'build')));
 // Session setup for Passport
 app.use((0, express_session_1.default)({
     secret: process.env.SESSION_SECRET || 'your_session_secret',
@@ -46,6 +45,11 @@ app.use('/api/v1/auth', auth_1.default);
 app.post('/api/v1/content', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const type = req.body.type;
     const link = req.body.link;
+    const title = req.body.title;
+    // @ts-ignore
+    const userId = req.userId;
+    console.log("Creating content for user:", userId);
+    console.log("Payload:", { type, link, title });
     yield db_1.ContentModel.create({
         link,
         type,
@@ -156,9 +160,9 @@ app.delete('/api/v1/content/:id', middleware_1.userMiddleware, (req, res) => __a
         res.status(500).json({ message: 'Failed to delete content' });
     }
 }));
-app.get('*', (req, res) => {
-    res.sendFile(path_1.default.join(__dirname, 'build', 'index.html'));
-});
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'build', 'index.html'));
+// });
 app.get('/ping', (req, res) => {
     res.send({ status: 'ok' });
 });

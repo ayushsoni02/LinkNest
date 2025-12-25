@@ -24,7 +24,7 @@ const SignIn = () => {
          console.log("passwordRef:", passwordRef.current);
          console.log("Username:", usernameRef.current?.value);
          console.log("Password:", passwordRef.current?.value);
-       const response =  await axios.post(BACKEND_URL+"/api/v1/signin",{            
+       const response =  await axios.post(BACKEND_URL+"/api/v1/auth/signin",{            
                  username,
                  password
           })

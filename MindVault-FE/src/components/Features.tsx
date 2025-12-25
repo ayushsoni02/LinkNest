@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/custom/Card";
 import { Zap, Shield, Users, Search, Tag, BarChart3 } from "lucide-react";
+import SmartLinkCard from "./SmartLinkCard";
 
 const Features = () => {
   const features = [
@@ -70,6 +71,50 @@ const Features = () => {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Smart Link Cards Showcase */}
+        <div className="mt-20 mb-16">
+          <div className="text-center mb-12">
+            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Experience Intelligent Organization
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Our Smart Link Cards automatically adapt to your content, providing AI-generated summaries and beautiful previews.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <SmartLinkCard 
+              title="Understanding React Server Components"
+              url="https://react.dev"
+              type="article"
+              date="Oct 24, 2024"
+              tags={["React", "WebDev", "Frontend"]}
+              summary="A deep dive into how Server Components allow you to write UI that can be rendered and cached on the server, ensuring faster initial page loads and better performance."
+              fullSummary="React Server Components (RSC) represent a paradigm shift in how we build React applications. By allowing components to run exclusively on the server, RSCs reduce the amount of JavaScript sent to the client, improving startup time. This article explores the architecture, data fetching patterns, and how RSCs integrate with Client Components for interactivity."
+            />
+             <SmartLinkCard 
+              title="Building a SaaS with Next.js 14"
+              url="https://youtube.com/watch?v=example"
+              type="youtube"
+              date="Nov 12, 2024"
+              thumbnailUrl="https://i.ytimg.com/vi/W5teEht1bV8/hqdefault.jpg"
+              tags={["SaaS", "NextJS", "Tutorial"]}
+              summary="Complete walkthrough of building a modern SaaS application using Next.js 14, including authentication, database integration, and Stripe payments."
+              fullSummary="This comprehensive tutorial covers the entire lifecycle of building a production-ready SaaS application. It starts with project setup using Next.js 14 App Router, moves on to integrating Clerk for authentication, setting up a Prisma database, and finally configuring Stripe for recurring subscription payments. Perfect for indie hackers and startups."
+            />
+            <SmartLinkCard 
+              title="The Future of AI Agents"
+              url="https://twitter.com/example"
+              type="twitter"
+              date="Dec 15, 2024"
+              thumbnailUrl="https://pbs.twimg.com/profile_images/1683325380441128960/yRsRRjGO_400x400.jpg"
+              tags={["AI", "Tech", "Future"]}
+              summary="Autonomous agents will revolutionize how we interact with software. Instead of clicking buttons, we will declare goals and agents will execute them."
+              fullSummary="The thread discusses the shift from specific software tools to goal-oriented AI agents. It argues that the next big platform shift isn't AR/VR or Crypto, but Agentic workflows where software acts on your behalf. Includes examples of agent frameworks like AutoGPT and BabyAGI."
+            />
+          </div>
         </div>
 
         {/* CTA Section */}

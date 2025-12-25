@@ -10,6 +10,7 @@ import { BACKEND_URL } from "./Config"
 import { ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import OAuthCallback from "./Pages/OAuthCallback"
+import NestWorkspace from "./Pages/NestWorkspace"
 
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
       <Route path="/Dashboard" element={<Dashboard/>}/>
       <Route path="/about" element={<About />} />
       <Route path="/features" element={<Features />} />
+      <Route path="/nest/:id" element={<NestWorkspace />} />
       <Route path="oauth-callback" element={<OAuthCallback/>}/>
     </Routes>
   </BrowserRouter>
