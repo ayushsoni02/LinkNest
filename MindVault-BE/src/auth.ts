@@ -48,7 +48,7 @@ router.post('/signup', async (req: ExpressRequest, res: ExpressResponse) => {
 
     const token = jwt.sign({
       id: newUser._id,
-    }, JWT_PASSWORD);
+    }, JWT_PASSWORD, { expiresIn: '24h' });
 
     res.json({
       token: `Bearer ${token}`,
@@ -86,7 +86,7 @@ router.post('/signin', async (req: ExpressRequest, res: ExpressResponse) => {
       const token = jwt.sign(
         { id: existingUser._id },
         process.env.JWT_SECRET || JWT_PASSWORD, // Make sure to use environment variable
-        { expiresIn: '1h' } // Add token expiration
+        { expiresIn: '24h' } // Add token expiration
       );
 
       res.json({
@@ -121,7 +121,7 @@ router.get(
     // Generate JWT token for the authenticated user
     const token = jwt.sign({
       id: (req.user as Express.User)._id,
-    }, JWT_PASSWORD);
+    }, JWT_PASSWORD, { expiresIn: '24h' });
 
     // Redirect to frontend with token
     const frontendUrl = process.env.FRONTEND_URL;

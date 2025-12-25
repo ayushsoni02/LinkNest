@@ -46,17 +46,20 @@ app.post('/api/v1/content', middleware_1.userMiddleware, (req, res) => __awaiter
     const type = req.body.type;
     const link = req.body.link;
     const title = req.body.title;
+    const tags = req.body.tags || [];
+    const nestId = req.body.nestId || null;
     // @ts-ignore
     const userId = req.userId;
     console.log("Creating content for user:", userId);
-    console.log("Payload:", { type, link, title });
+    console.log("Payload:", { type, link, title, tags, nestId });
     yield db_1.ContentModel.create({
         link,
         type,
-        title: req.body.title,
+        title,
+        tags,
+        nestId,
         //@ts-ignore
         userId: req.userId,
-        tags: [],
     });
     res.json({
         message: 'Content created successfully',
@@ -67,7 +70,10 @@ app.get('/api/v1/content', middleware_1.userMiddleware, (req, res) => __awaiter(
     const userId = req.userId;
     const content = yield db_1.ContentModel.find({
         userId: userId,
-    }).populate("userId", "username");
+    })
+        .populate("nestId", "name description")
+        .populate("userId", "username")
+        .sort({ createdAt: -1 });
     res.json({
         content
     });
@@ -158,6 +164,74 @@ app.delete('/api/v1/content/:id', middleware_1.userMiddleware, (req, res) => __a
     }
     catch (err) {
         res.status(500).json({ message: 'Failed to delete content' });
+    }
+}));
+// Nest CRUD endpoints
+app.post('/api/v1/nests', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { name, description } = req.body;
+        // @ts-ignore
+        const userId = req.userId;
+        if (!name) {
+            res.status(400).json({ message: 'Nest name is required' });
+            return;
+        }
+        const nest = yield db_1.NestModel.create({
+            name,
+            description,
+            userId
+        });
+        res.json({ nest });
+    }
+    catch (err) {
+        console.error('Create nest error:', err);
+        res.status(500).json({ message: 'Failed to create nest' });
+    }
+}));
+app.get('/api/v1/nests', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // @ts-ignore
+        const userId = req.userId;
+        const nests = yield db_1.NestModel.find({ userId }).sort({ createdAt: -1 });
+        res.json({ nests });
+    }
+    catch (err) {
+        console.error('Get nests error:', err);
+        res.status(500).json({ message: 'Failed to fetch nests' });
+    }
+}));
+app.delete('/api/v1/nests/:id', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const nestId = req.params.id;
+        // @ts-ignore
+        const userId = req.userId;
+        yield db_1.NestModel.deleteOne({ _id: nestId, userId });
+        // Unassign all content from this nest
+        yield db_1.ContentModel.updateMany({ nestId: nestId }, { nestId: null });
+        res.json({ message: 'Nest deleted successfully' });
+    }
+    catch (err) {
+        console.error('Delete nest error:', err);
+        res.status(500).json({ message: 'Failed to delete nest' });
+    }
+}));
+app.put('/api/v1/content/:id', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const contentId = req.params.id;
+        const { nestId, tags } = req.body;
+        // @ts-ignore
+        const userId = req.userId;
+        const updateData = {};
+        if (nestId !== undefined)
+            updateData.nestId = nestId;
+        if (tags !== undefined)
+            updateData.tags = tags;
+        yield db_1.ContentModel.updateOne({ _id: contentId, userId }, updateData);
+        res.json({ message: 'Content updated successfully' });
+    }
+    catch (err) {
+        console.error('Update content error:', err);
+        res.status(500).json({ message: 'Failed to update content' });
     }
 }));
 // app.get('*', (req, res) => {

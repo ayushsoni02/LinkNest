@@ -21,22 +21,26 @@ const UserSchema = new Schema({
 
 export const userModel = mongoose.model('users', UserSchema);
 
+const NestSchema = new Schema({
+    name: { type: String, required: true },
+    description: String,
+    userId: { type: mongoose.Types.ObjectId, ref: 'users', required: true },
+    createdAt: { type: Date, default: Date.now }
+});
+
+export const NestModel = mongoose.model('nests', NestSchema);
+
 const ContentSchema = new Schema({
     title: String,
     link: String,
-    tags: [{ type: mongoose.Types.ObjectId, ref: 'Tag' }],
+    tags: [String],
     type: String,
-    userId: { type: mongoose.Types.ObjectId, ref: 'users', required: true }
+    nestId: { type: mongoose.Types.ObjectId, ref: 'nests', default: null },
+    userId: { type: mongoose.Types.ObjectId, ref: 'users', required: true },
+    createdAt: { type: Date, default: Date.now }
 });
 
 export const ContentModel = mongoose.model('contents', ContentSchema);
-
-// const tagSchema = new Schema({
-
-//     title:String,
-// });
-
-// export const tagModel = mongoose.model('tags', tagSchema);
 
 const LinkSchema = new Schema({
     hash: String,

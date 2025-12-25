@@ -33,7 +33,7 @@ router.post('/signup', (req, res) => __awaiter(void 0, void 0, void 0, function*
         });
         const token = jsonwebtoken_1.default.sign({
             id: newUser._id,
-        }, conf_1.JWT_PASSWORD);
+        }, conf_1.JWT_PASSWORD, { expiresIn: '24h' });
         res.json({
             token: `Bearer ${token}`,
             message: 'User created successfully',
@@ -63,7 +63,7 @@ router.post('/signin', (req, res) => __awaiter(void 0, void 0, void 0, function*
         const isPasswordValid = yield bcrypt_1.default.compare(password, existingUser.password);
         if (isPasswordValid) {
             const token = jsonwebtoken_1.default.sign({ id: existingUser._id }, process.env.JWT_SECRET || conf_1.JWT_PASSWORD, // Make sure to use environment variable
-            { expiresIn: '1h' } // Add token expiration
+            { expiresIn: '24h' } // Add token expiration
             );
             res.json({
                 token: `Bearer ${token}`,
@@ -94,7 +94,7 @@ router.get('/google/callback', passport_1.default.authenticate('google', { sessi
     // Generate JWT token for the authenticated user
     const token = jsonwebtoken_1.default.sign({
         id: req.user._id,
-    }, conf_1.JWT_PASSWORD);
+    }, conf_1.JWT_PASSWORD, { expiresIn: '24h' });
     // Redirect to frontend with token
     const frontendUrl = process.env.FRONTEND_URL;
     res.redirect(`${frontendUrl}/oauth-callback?token=${token}`);
