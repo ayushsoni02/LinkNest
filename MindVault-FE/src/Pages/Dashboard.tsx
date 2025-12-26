@@ -5,6 +5,7 @@ import { Plusicon } from '../icons/PlusIcon'
 import Sidebar from '../components/Sidebar'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useContent, Content } from '../hooks/UseContent'
+import UniversalAdd from '../components/UniversalAdd'
 
 function Dashboard() {
   const [modelOpen, setModelOpen] = useState(false);
@@ -89,6 +90,9 @@ function Dashboard() {
         {/* Main Content - Offset by sidebar width (w-64 = 16rem) */}
         <div className='md:ml-64 p-8 transition-all duration-300' >
           <CreateContentModel open={modelOpen} onClose={() => setModelOpen(false)} />
+          
+          {/* Universal Add - AI Powered Input */}
+          <UniversalAdd onSuccess={refresh} />
           
           {/* Header Row: Search + Action Buttons */}
           <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12'>
