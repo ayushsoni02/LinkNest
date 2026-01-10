@@ -9,9 +9,18 @@ export type Content = {
     type: string; 
     link: string;
     tags: string[];
+    summary?: string;
+    aiMetadata?: {
+        model: string;
+        tokensUsed?: number;
+        processingTime: number;
+        extractedContentLength: number;
+    };
+    extractedContent?: string;
     nestId: { _id: string; name: string; description?: string } | null;
     createdAt: string;
 };
+
 
 export function useContent(){
    const [contents,setContents] = useState<Content[]>([]);

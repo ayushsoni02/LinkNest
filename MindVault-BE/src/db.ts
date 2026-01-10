@@ -35,10 +35,19 @@ const ContentSchema = new Schema({
     link: String,
     tags: [String],
     type: String,
+    summary: String,
+    aiMetadata: {
+        model: String,
+        tokensUsed: Number,
+        processingTime: Number,
+        extractedContentLength: Number
+    },
+    extractedContent: String,
     nestId: { type: mongoose.Types.ObjectId, ref: 'nests', default: null },
     userId: { type: mongoose.Types.ObjectId, ref: 'users', required: true },
     createdAt: { type: Date, default: Date.now }
 });
+
 
 export const ContentModel = mongoose.model('contents', ContentSchema);
 

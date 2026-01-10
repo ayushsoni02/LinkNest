@@ -115,15 +115,14 @@ export default function SmartLinkCard({
                     </div>
 
                     {/* Summary Lines */}
-                    {!isMediaCard && (
+                    {!isMediaCard && summary && (
                          <div className="mb-4">
                             <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed line-clamp-3">
                                 {summary}
-                                <span className="opacity-20 block mt-1 w-2/3 h-2 bg-zinc-300 rounded"></span>
-                                <span className="opacity-20 block mt-1 w-1/2 h-2 bg-zinc-300 rounded"></span>
                             </p>
                         </div>
                     )}
+
                 </div>
                 
                 {/* Footer: Tags */}

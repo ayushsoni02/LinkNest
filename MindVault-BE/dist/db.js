@@ -31,6 +31,14 @@ const ContentSchema = new Schema({
     link: String,
     tags: [String],
     type: String,
+    summary: String,
+    aiMetadata: {
+        model: String,
+        tokensUsed: Number,
+        processingTime: Number,
+        extractedContentLength: Number
+    },
+    extractedContent: String,
     nestId: { type: mongoose_1.default.Types.ObjectId, ref: 'nests', default: null },
     userId: { type: mongoose_1.default.Types.ObjectId, ref: 'users', required: true },
     createdAt: { type: Date, default: Date.now }

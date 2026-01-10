@@ -14,6 +14,8 @@ import path from "path";
 import passport from 'passport';
 import session from 'express-session';
 import { configurePassport } from './passport';
+import { analyzeURL, batchAnalyzeURLs, suggestNest } from './aiService';
+import rateLimit from 'express-rate-limit';
 
 const app = express();
 app.use(express.json());
@@ -38,11 +40,99 @@ configurePassport();
 // Auth routes
 app.use('/api/v1/auth', authRoutes);
 
+// Rate limiter for AI endpoints (5 requests per minute per user)
+const aiRateLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: parseInt(process.env.RATE_LIMIT_PER_USER || '5'),
+    message: 'Too many AI requests, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// AI Analysis Endpoints
+app.post('/api/v1/ai/analyze', userMiddleware, aiRateLimiter, async (req, res) => {
+    try {
+        const { url } = req.body;
+
+        if (!url) {
+            res.status(400).json({ message: 'URL is required' });
+            return;
+        }
+
+        // Analyze URL with AI
+        const analysis = await analyzeURL(url);
+
+        res.json({ analysis });
+    } catch (error: any) {
+        console.error('AI analyze error:', error);
+        res.status(500).json({ message: error.message || 'AI analysis failed' });
+    }
+});
+
+app.post('/api/v1/ai/batch-analyze', userMiddleware, aiRateLimiter, async (req, res) => {
+    try {
+        const { urls } = req.body;
+
+        if (!urls || !Array.isArray(urls) || urls.length === 0) {
+            res.status(400).json({ message: 'URLs array is required' });
+            return;
+        }
+
+        if (urls.length > 10) {
+            res.status(400).json({ message: 'Maximum 10 URLs allowed per batch' });
+            return;
+        }
+
+        // Batch analyze URLs
+        const results = await batchAnalyzeURLs(urls);
+
+        res.json({ results });
+    } catch (error: any) {
+        console.error('Batch analyze error:', error);
+        res.status(500).json({ message: error.message || 'Batch analysis failed' });
+    }
+});
+
+app.post('/api/v1/ai/suggest-nest', userMiddleware, async (req, res) => {
+    try {
+        const { title, summary, tags } = req.body;
+        // @ts-ignore
+        const userId = req.userId;
+
+        if (!title || !summary) {
+            res.status(400).json({ message: 'Title and summary are required' });
+            return;
+        }
+
+        // Get user's nests
+        const nests = await NestModel.find({ userId });
+
+        // Suggest best nest
+        const suggestedNestId = await suggestNest(
+            { title, summary, tags: tags || [] },
+            nests.map(n => ({
+                _id: n._id.toString(),
+                name: n.name,
+                description: n.description || undefined
+            }))
+        );
+
+
+        res.json({ suggestedNestId });
+    } catch (error: any) {
+        console.error('Suggest nest error:', error);
+        res.status(500).json({ message: error.message || 'Nest suggestion failed' });
+    }
+});
+
 app.post('/api/v1/content', userMiddleware, async (req, res) => {
     const type = req.body.type;
     const link = req.body.link;
     const title = req.body.title;
     const tags = req.body.tags || [];
+    const summary = req.body.summary;
+    const aiMetadata = req.body.aiMetadata;
+    const extractedContent = req.body.extractedContent;
     const nestId = req.body.nestId || null;
     // @ts-ignore
     const userId = req.userId;
@@ -54,6 +144,9 @@ app.post('/api/v1/content', userMiddleware, async (req, res) => {
         type,
         title,
         tags,
+        summary,
+        aiMetadata,
+        extractedContent,
         nestId,
         //@ts-ignore
         userId: req.userId,

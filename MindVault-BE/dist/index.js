@@ -23,6 +23,8 @@ const cors_1 = __importDefault(require("cors"));
 const passport_1 = __importDefault(require("passport"));
 const express_session_1 = __importDefault(require("express-session"));
 const passport_2 = require("./passport");
+const aiService_1 = require("./aiService");
+const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)());
@@ -42,11 +44,83 @@ app.use(passport_1.default.session());
 (0, passport_2.configurePassport)();
 // Auth routes
 app.use('/api/v1/auth', auth_1.default);
+// Rate limiter for AI endpoints (5 requests per minute per user)
+const aiRateLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 60 * 1000, // 1 minute
+    max: parseInt(process.env.RATE_LIMIT_PER_USER || '5'),
+    message: 'Too many AI requests, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+// AI Analysis Endpoints
+app.post('/api/v1/ai/analyze', middleware_1.userMiddleware, aiRateLimiter, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { url } = req.body;
+        if (!url) {
+            res.status(400).json({ message: 'URL is required' });
+            return;
+        }
+        // Analyze URL with AI
+        const analysis = yield (0, aiService_1.analyzeURL)(url);
+        res.json({ analysis });
+    }
+    catch (error) {
+        console.error('AI analyze error:', error);
+        res.status(500).json({ message: error.message || 'AI analysis failed' });
+    }
+}));
+app.post('/api/v1/ai/batch-analyze', middleware_1.userMiddleware, aiRateLimiter, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { urls } = req.body;
+        if (!urls || !Array.isArray(urls) || urls.length === 0) {
+            res.status(400).json({ message: 'URLs array is required' });
+            return;
+        }
+        if (urls.length > 10) {
+            res.status(400).json({ message: 'Maximum 10 URLs allowed per batch' });
+            return;
+        }
+        // Batch analyze URLs
+        const results = yield (0, aiService_1.batchAnalyzeURLs)(urls);
+        res.json({ results });
+    }
+    catch (error) {
+        console.error('Batch analyze error:', error);
+        res.status(500).json({ message: error.message || 'Batch analysis failed' });
+    }
+}));
+app.post('/api/v1/ai/suggest-nest', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { title, summary, tags } = req.body;
+        // @ts-ignore
+        const userId = req.userId;
+        if (!title || !summary) {
+            res.status(400).json({ message: 'Title and summary are required' });
+            return;
+        }
+        // Get user's nests
+        const nests = yield db_1.NestModel.find({ userId });
+        // Suggest best nest
+        const suggestedNestId = yield (0, aiService_1.suggestNest)({ title, summary, tags: tags || [] }, nests.map(n => ({
+            _id: n._id.toString(),
+            name: n.name,
+            description: n.description || undefined
+        })));
+        res.json({ suggestedNestId });
+    }
+    catch (error) {
+        console.error('Suggest nest error:', error);
+        res.status(500).json({ message: error.message || 'Nest suggestion failed' });
+    }
+}));
 app.post('/api/v1/content', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const type = req.body.type;
     const link = req.body.link;
     const title = req.body.title;
     const tags = req.body.tags || [];
+    const summary = req.body.summary;
+    const aiMetadata = req.body.aiMetadata;
+    const extractedContent = req.body.extractedContent;
     const nestId = req.body.nestId || null;
     // @ts-ignore
     const userId = req.userId;
@@ -57,6 +131,9 @@ app.post('/api/v1/content', middleware_1.userMiddleware, (req, res) => __awaiter
         type,
         title,
         tags,
+        summary,
+        aiMetadata,
+        extractedContent,
         nestId,
         //@ts-ignore
         userId: req.userId,
