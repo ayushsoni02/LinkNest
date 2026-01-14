@@ -1,6 +1,6 @@
 // Content Extractor Service
 // Extracts text content from various URL types (articles, YouTube, Twitter, etc.)
-
+import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { YoutubeTranscript } from 'youtube-transcript';
 
@@ -52,26 +52,42 @@ function extractYouTubeVideoId(url: string): string | null {
 /**
  * Extract YouTube transcript
  */
+/**
+ * Enhanced YouTube extraction
+ */
 async function extractYouTubeContent(url: string): Promise<ExtractedContent> {
     try {
         const videoId = extractYouTubeVideoId(url);
-        if (!videoId) {
-            throw new Error('Invalid YouTube URL');
+        if (!videoId) throw new Error('Invalid YouTube URL');
+
+        // 1. Fetch Metadata (Title & Thumbnail) without an API key
+        let title = 'YouTube Video';
+        let thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+
+        try {
+            const metaResponse = await axios.get(`https://noembed.com/embed?url=${url}`);
+            if (metaResponse.data && metaResponse.data.title) {
+                title = metaResponse.data.title;
+            }
+        } catch (metaError) {
+            console.warn('Metadata fetch failed, using defaults');
         }
 
-        // Fetch transcript
+        // 2. Fetch Transcript
         const transcript = await YoutubeTranscript.fetchTranscript(videoId);
         const text = transcript.map(item => item.text).join(' ');
 
         return {
-            text: text.slice(0, 10000), // Limit to 10k chars
-            contentType: 'youtube'
+            text: text.slice(0, 15000), // Gemini 3 can handle more, so 15k is safe
+            title: title,
+            contentType: 'youtube',
+            // thumbnail is optional in your interface, add it if you update ExtractedContent
         };
     } catch (error) {
         console.error('YouTube extraction error:', error);
-        // Fallback: Return placeholder if transcript unavailable
         return {
-            text: 'Transcript unavailable for this video.',
+            text: 'Transcript unavailable. Please check if captions are enabled for this video.',
+            title: 'YouTube Video',
             contentType: 'youtube'
         };
     }
@@ -82,17 +98,18 @@ async function extractYouTubeContent(url: string): Promise<ExtractedContent> {
  */
 async function extractArticleContent(url: string): Promise<ExtractedContent> {
     try {
-        const response = await fetch(url, {
+        const response = await axios.get(url, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (compatible; LinkNest/1.0; +http://linknest.app)'
-            }
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Referer': 'https://www.google.com/',
+            },
+            timeout: 15000 // Increase timeout to 15 seconds
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
-        const html = await response.text();
+        // axios throws on non-2xx, so no need to check response.ok
+        const html = response.data;
         const $ = cheerio.load(html);
 
         // Remove script, style, and nav elements
@@ -152,17 +169,18 @@ async function extractArticleContent(url: string): Promise<ExtractedContent> {
  */
 async function extractTwitterContent(url: string): Promise<ExtractedContent> {
     try {
-        const response = await fetch(url, {
+        const response = await axios.get(url, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (compatible; LinkNest/1.0; +http://linknest.app)'
-            }
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Referer': 'https://www.google.com/',
+            },
+            timeout: 15000 // Increase timeout to 15 seconds
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
-        const html = await response.text();
+        // axios throws on non-2xx, so no need to check response.ok
+        const html = response.data;
         const $ = cheerio.load(html);
 
         // Get title (usually the first tweet text)
@@ -192,17 +210,18 @@ async function extractTwitterContent(url: string): Promise<ExtractedContent> {
  */
 async function extractGitHubContent(url: string): Promise<ExtractedContent> {
     try {
-        const response = await fetch(url, {
+        const response = await axios.get(url, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (compatible; LinkNest/1.0; +http://linknest.app)'
-            }
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Referer': 'https://www.google.com/',
+            },
+            timeout: 15000 // Increase timeout to 15 seconds
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
-        const html = await response.text();
+        // axios throws on non-2xx, so no need to check response.ok
+        const html = response.data;
         const $ = cheerio.load(html);
 
         const title = $('meta[property="og:title"]').attr('content');

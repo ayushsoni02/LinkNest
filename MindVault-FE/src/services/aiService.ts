@@ -23,6 +23,7 @@ export interface BatchAnalysisResult extends AIAnalysisResult {
 
 /**
  * Analyze a single URL with AI
+ * Timeout is set to 60 seconds to accommodate AI processing time
  */
 export async function analyzeURL(url: string): Promise<AIAnalysisResult> {
     try {
@@ -32,13 +33,20 @@ export async function analyzeURL(url: string): Promise<AIAnalysisResult> {
             {
                 headers: {
                     'Authorization': localStorage.getItem('token') || ''
-                }
+                },
+                timeout: 60000 // 60 second timeout for AI processing
             }
         );
 
         return response.data.analysis;
     } catch (error: any) {
         console.error('AI analysis error:', error);
+
+        // Handle timeout error specifically
+        if (error.code === 'ECONNABORTED') {
+            throw new Error('AI processing is taking longer than expected. Please try again.');
+        }
+
         throw new Error(
             error.response?.data?.message || 'Failed to analyze URL. Please try again.'
         );
@@ -47,6 +55,7 @@ export async function analyzeURL(url: string): Promise<AIAnalysisResult> {
 
 /**
  * Batch analyze multiple URLs
+ * Timeout is set to 90 seconds to accommodate processing multiple URLs
  */
 export async function batchAnalyzeURLs(urls: string[]): Promise<BatchAnalysisResult[]> {
     try {
@@ -56,7 +65,8 @@ export async function batchAnalyzeURLs(urls: string[]): Promise<BatchAnalysisRes
             {
                 headers: {
                     'Authorization': localStorage.getItem('token') || ''
-                }
+                },
+                timeout: 90000 // 90 second timeout for batch processing
             }
         );
 
@@ -68,6 +78,12 @@ export async function batchAnalyzeURLs(urls: string[]): Promise<BatchAnalysisRes
         }));
     } catch (error: any) {
         console.error('Batch analysis error:', error);
+
+        // Handle timeout error specifically
+        if (error.code === 'ECONNABORTED') {
+            throw new Error('Batch processing is taking longer than expected. Try with fewer URLs.');
+        }
+
         throw new Error(
             error.response?.data?.message || 'Failed to batch analyze URLs.'
         );

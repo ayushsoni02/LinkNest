@@ -1,9 +1,10 @@
-import { useState, Fragment } from 'react';
+import { useState, Fragment, useRef, useEffect } from 'react';
 import { Dialog, Transition, Menu } from '@headlessui/react';
 import { Share2, Trash2, ExternalLink, X, PlayCircle, MoreVertical, Check } from 'lucide-react';
 import { useNests } from '../hooks/useNests';
 import axios from 'axios';
 import { BACKEND_URL } from '../Config';
+import LivePreviewPortal from './LivePreviewPortal';
 
 interface SmartLinkCardProps {
   id: string;
@@ -36,6 +37,12 @@ export default function SmartLinkCard({
 }: SmartLinkCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { nests } = useNests();
+  
+  // Live Preview State
+  const [showPreview, setShowPreview] = useState(false);
+  const [cardPosition, setCardPosition] = useState({ x: 0, y: 0, cardWidth: 0, cardHeight: 0 });
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const handleMoveToNest = async (nestId: string | null) => {
     try {
@@ -49,6 +56,50 @@ export default function SmartLinkCard({
       alert('Failed to move content to nest');
     }
   };
+
+  // Hover Logic with 500ms delay (reduced from 1s for better UX)
+  const handleMouseEnter = () => {
+    console.log('🎯 Mouse entered card');
+    if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      setCardPosition({
+        x: rect.left,
+        y: rect.top,
+        cardWidth: rect.width,
+        cardHeight: rect.height
+      });
+      console.log('📍 Card position:', rect);
+    }
+
+    // Set timeout for 500ms (reduced for better UX)
+    hoverTimeoutRef.current = setTimeout(() => {
+      console.log('⏰ Timeout reached - showing preview');
+      setShowPreview(true);
+    }, 1000); // Changed from 1000ms to 500ms
+  };
+
+  const handleMouseLeave = () => {
+    console.log('👋 Pointer left card, showPreview:', showPreview);
+    
+    // Only clear timeout if preview hasn't appeared yet
+    // Once preview is showing, only close via backdrop click or Escape
+    if (hoverTimeoutRef.current && !showPreview) {
+      console.log('🚫 Clearing timeout (preview not yet shown)');
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    } else if (showPreview) {
+      console.log('✋ Preview is visible, ignoring pointer leave');
+    }
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Helper to extract YouTube Thumbnail if not provided
   const getThumbnail = () => {
@@ -66,8 +117,11 @@ export default function SmartLinkCard({
 
   return (
     <>
-      <div 
+      <div
+        ref={cardRef}
         onClick={() => setIsOpen(true)}
+        onPointerEnter={handleMouseEnter}
+        onPointerLeave={handleMouseLeave}
         className="group relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full overflow-hidden"
       >
         <div className="flex gap-4 h-full">
@@ -142,6 +196,15 @@ export default function SmartLinkCard({
             </div>
         </div>
       </div>
+
+      {/* Live Preview Portal */}
+      <LivePreviewPortal
+        isVisible={showPreview}
+        url={url}
+        type={type}
+        position={cardPosition}
+        onClose={() => setShowPreview(false)}
+      />
 
        {/* --- Expanded Slide-over Panel (Keeping existing logic) --- */}
        <Transition appear show={isOpen} as={Fragment}>

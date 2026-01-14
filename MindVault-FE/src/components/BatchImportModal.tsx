@@ -1,8 +1,7 @@
 import { useState, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { X, Upload, CheckCircle, XCircle, Loader } from 'lucide-react';
-import { saveContent } from '../services/aiService';
-import { mockAISummarizer } from '../utils/mockAISummarizer';
+import { saveContent, batchAnalyzeURLs } from '../services/aiService';
 import { toast } from 'react-toastify';
 
 interface BatchImportModalProps {
@@ -16,7 +15,7 @@ interface BatchResult {
     title: string;
     summary: string;
     tags: string[];
-    type: 'article' | 'youtube' | 'twitter' | 'dev' | 'other';
+    type: 'article' | 'youtube' | 'twitter' | 'github' | 'dev' | 'other';
     success: boolean;
 }
 
@@ -47,41 +46,26 @@ export default function BatchImportModal({ isOpen, onClose, onSuccess }: BatchIm
         setResults([]);
 
         try {
-            // TEMPORARILY USING MOCK AI - Process all URLs with mock
-            const analysisResults = await Promise.allSettled(
-                urls.map(async (url) => {
-                    const mockResult = await mockAISummarizer(url);
-                    return {
-                        url,
-                        title: mockResult.title,
-                        summary: mockResult.summary,
-                        tags: mockResult.tags,
-                        type: mockResult.type,
-                        success: true
-                    };
-                })
-            );
+            // Call REAL Gemini AI batch analysis
+            console.log('🚀 Calling real Gemini AI batch analysis for', urls.length, 'URLs');
+            const analysisResults = await batchAnalyzeURLs(urls);
+            console.log('✅ Received batch analysis results:', analysisResults);
             
-            const batchResults: BatchResult[] = analysisResults.map((result, index) => {
-                if (result.status === 'fulfilled') {
-                    return result.value;
-                } else {
-                    return {
-                        url: urls[index],
-                        title: 'Analysis Failed',
-                        summary: 'Failed to analyze this URL',
-                        tags: ['Error'],
-                        type: 'other' as const,
-                        success: false
-                    };
-                }
-            });
+            const batchResults: BatchResult[] = analysisResults.map(result => ({
+                url: result.url,
+                title: result.title,
+                summary: result.summary,
+                tags: result.tags,
+                type: result.type,
+                success: result.success
+            }));
             
             setResults(batchResults);
             
             const successCount = batchResults.filter(r => r.success).length;
             toast.success(`Analyzed ${successCount}/${urls.length} URLs successfully!`);
         } catch (error: any) {
+            console.error('❌ Batch analysis error:', error);
             toast.error(error.message || 'Batch analysis failed');
         } finally {
             setIsProcessing(false);
@@ -109,9 +93,9 @@ export default function BatchImportModal({ isOpen, onClose, onSuccess }: BatchIm
                         tags: result.tags,
                         summary: result.summary,
                         aiMetadata: {
-                            model: 'mock-ai',
-                            processingTime: 1500,
-                            extractedContentLength: 1000
+                            model: 'gemini-1.5-flash',
+                            processingTime: 0,
+                            extractedContentLength: 0
                         },
                         nestId: null
                     })
@@ -122,6 +106,7 @@ export default function BatchImportModal({ isOpen, onClose, onSuccess }: BatchIm
             onSuccess();
             handleClose();
         } catch (error) {
+            console.error('❌ Save error:', error);
             toast.error('Failed to save some links. Please try again.');
         } finally {
             setIsSaving(false);

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import SmartLinkCard from '../components/SmartLinkCard'
 import CreateContentModel from '../components/CreateContentModel'
 import { Plusicon } from '../icons/PlusIcon'
-import Sidebar from '../components/Sidebar'
+import Layout from '../components/Layout'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useContent, Content } from '../hooks/UseContent'
 import UniversalAdd from '../components/UniversalAdd'
@@ -80,18 +80,12 @@ function Dashboard() {
   const filteredLinks = getFilteredLinks();
 
   return (
-    <div>
-      <div className='min-h-screen bg-gray-50 dark:bg-zinc-950 text-black dark:text-white font-sans'>
-        <Sidebar 
-          className="hidden md:flex fixed h-full border-r border-zinc-200 dark:border-zinc-800" 
-          onFilterChange={setActiveFilter} 
-        />
-        
-        {/* Main Content - Offset by sidebar width (w-64 = 16rem) */}
-        <div className='md:ml-64 p-8 transition-all duration-300' >
+    <Layout onFilterChange={setActiveFilter}>
+      <div className='min-h-screen bg-slate-950 text-slate-200'>
+        <div className='p-8'>
           <CreateContentModel open={modelOpen} onClose={() => setModelOpen(false)} />
           
-          {/* Universal Add - AI Powered Input */}
+          {/* Universal Add - AI Powered Input with Beautiful Deep Space Styling */}
           <UniversalAdd onSuccess={refresh} />
           
           {/* Header Row: Search + Action Buttons */}
@@ -102,14 +96,14 @@ function Dashboard() {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Search by title or tags..."
-                  className="w-full pl-6 pr-4 py-3 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-sm transition-all text-lg placeholder:text-zinc-400"
+                  className="w-full pl-6 pr-4 py-3 rounded-full border border-slate-700 bg-slate-900/50 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/40 shadow-sm transition-all text-lg placeholder:text-slate-500"
                 />
             </div>
 
             <div className='flex items-center gap-3'>
                <button
                   onClick={() => setModelOpen(true)}
-                  className="px-6 py-3 bg-white dark:bg-white text-zinc-900 border border-zinc-200 dark:border-zinc-200 hover:bg-zinc-50 font-semibold rounded-xl shadow-sm hover:shadow transition-all flex items-center gap-2"
+                  className="px-6 py-3 bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 hover:border-slate-600 font-semibold rounded-xl shadow-sm hover:shadow transition-all flex items-center gap-2"
                >
                   <Plusicon />
                   Add Content
@@ -120,8 +114,8 @@ function Dashboard() {
           {/* Active Filter Chips */}
           {activeFilter.type !== 'all' && (
             <div className="mb-6 flex items-center gap-2">
-              <span className="text-sm text-zinc-500 dark:text-zinc-400">Active filter:</span>
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 rounded-lg">
+              <span className="text-sm text-slate-500">Active filter:</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 rounded-lg">
                 <span className="text-sm font-medium">
                   {activeFilter.type === 'content-type' && `Type: ${activeFilter.value}`}
                   {activeFilter.type === 'tag' && `Tag: ${activeFilter.value}`}
@@ -130,7 +124,7 @@ function Dashboard() {
                 </span>
                 <button
                   onClick={() => setActiveFilter({ type: 'all', value: null })}
-                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                  className="text-indigo-300 hover:text-indigo-200"
                 >
                   ✕
                 </button>
@@ -140,14 +134,14 @@ function Dashboard() {
 
           {filteredLinks.length === 0 ? (
             // Empty state
-            <div className="flex flex-col items-center pt-10 justify-center h-96 text-center gap-4 text-gray-500 dark:text-gray-300">
+            <div className="flex flex-col items-center pt-10 justify-center h-96 text-center gap-4 text-slate-400">
               <img
                 src="/undraw_no-data_ig65.svg"
                 alt="Empty"
-                className="w-30 h-40 object-contain"
+                className="w-30 h-40 object-contain opacity-50"
               />
-              <h2 className="text-xl font-semibold">Looks like it's empty in here!</h2>
-              <p className="max-w-md">
+              <h2 className="text-xl font-semibold text-slate-300">Looks like it's empty in here!</h2>
+              <p className="max-w-md text-slate-400">
                 {searchQuery || activeFilter.type !== 'all' 
                   ? "No links match your current filters. Try adjusting your search or filter."
                   : "You haven't added any content yet. Let's get started!"
@@ -162,7 +156,7 @@ function Dashboard() {
                     setModelOpen(true);
                   }
                 }}
-                className="mt-2 px-5 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition"
+                className="mt-2 px-5 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition"
               >
                 {searchQuery || activeFilter.type !== 'all' ? 'Clear filters' : '+ Add your first link'}
               </button>
@@ -191,7 +185,7 @@ function Dashboard() {
 
         </div>
       </div>
-    </div>
+    </Layout>
   );
 }
 

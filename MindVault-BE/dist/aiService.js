@@ -42,140 +42,101 @@ function mapToSimpleType(contentType) {
     return 'article';
 }
 /**
+ * Minimum content length threshold for scraping
+ * If content is shorter than this, we use URL-only fallback prompt
+ */
+const MIN_CONTENT_LENGTH = 100;
+/**
  * Analyze URL and generate AI summary
  */
 function analyzeURL(url) {
     return __awaiter(this, void 0, void 0, function* () {
         const startTime = Date.now();
+        // Use gemini-2.5-flash for faster responses (under 5 seconds)
+        const MODEL_ID = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
         try {
-            // Step 1: Extract content from URL
             const extractedContent = yield (0, contentExtractor_1.extractContent)(url);
-            // Step 2: Initialize Gemini
             const ai = initializeGemini();
             const model = ai.getGenerativeModel({
-                model: process.env.GEMINI_MODEL || 'gemini-pro',
-                // Configure safety settings to be less restrictive
-                safetySettings: [
-                    {
-                        category: 'HARM_CATEGORY_HARASSMENT',
-                        threshold: 'BLOCK_ONLY_HIGH'
-                    },
-                    {
-                        category: 'HARM_CATEGORY_HATE_SPEECH',
-                        threshold: 'BLOCK_ONLY_HIGH'
-                    },
-                    {
-                        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-                        threshold: 'BLOCK_ONLY_HIGH'
-                    },
-                    {
-                        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-                        threshold: 'BLOCK_ONLY_HIGH'
-                    }
-                ]
+                model: MODEL_ID,
+                // Force JSON response - no conversational filler
+                generationConfig: {
+                    responseMimeType: "application/json",
+                }
             });
-            console.log('Extracted content length:', extractedContent.text.length);
-            console.log('Extracted content preview:', extractedContent.text.slice(0, 200));
-            // Step 3: Create prompt for Gemini
-            const prompt = `
-You are an AI content analyzer for a link management app called LinkNest. Analyze the following content and provide structured output.
+            // Check if extracted content is empty or too short (common for Twitter/X, protected pages)
+            const hasValidContent = extractedContent.text && extractedContent.text.trim().length >= MIN_CONTENT_LENGTH;
+            let prompt;
+            if (hasValidContent) {
+                // Standard prompt with extracted content
+                prompt = `Analyze this content and return a JSON object with "title", "summary" (5 sentences), and "tags" (3 specific words).
+Content: ${extractedContent.text.slice(0, 8000)}`;
+            }
+            else {
+                // URL-only fallback prompt for hard-to-scrape sites (Twitter/X, etc.)
+                console.log(`⚠️ Content too short or empty for ${url}. Using URL-only fallback.`);
+                prompt = `I could not read this website. Based on your internal knowledge of this URL: ${url}
 
-URL: ${url}
-Content Type: ${extractedContent.contentType}
-Content Title: ${extractedContent.title || 'Unknown'}
+Please provide a JSON object with:
+- "title": A descriptive title for this link
+- "summary": A 5-sentence summary based on what this URL likely contains
+- "tags": 3 specific keyword tags
 
-Content Text:
-${extractedContent.text.slice(0, 5000)}
-
-Please analyze this content and provide a JSON response with the following structure:
-{
-  "title": "A clear, concise title (max 80 characters)",
-  "summary": "A comprehensive 5-sentence summary of the main points",
-  "tags": ["tag1", "tag2", "tag3"]
-}
-
-Guidelines:
-- Title should be descriptive and engaging
-- Summary should be exactly 5 sentences, covering key insights
-- Provide exactly 3 relevant tags (single words, capitalized)
-- Tags should be specific to the content domain
-- Keep response in valid JSON format
-
-Respond with ONLY the JSON object, no additional text.
-`;
-            console.log('Sending prompt to Gemini...');
-            // Step 4: Generate content with Gemini
+If you don't have specific knowledge about this URL, provide a reasonable summary based on the domain and URL structure.`;
+            }
+            console.log(`Using model: ${MODEL_ID}. Sending prompt...`);
             const result = yield model.generateContent(prompt);
-            console.log('Received result from Gemini');
             const response = yield result.response;
-            console.log('Response candidates:', JSON.stringify(response.candidates, null, 2));
-            console.log('Response promptFeedback:', JSON.stringify(response.promptFeedback, null, 2));
-            // Check for safety blocks or empty response
-            if (!response.candidates || response.candidates.length === 0) {
-                console.error('No candidates in response - content may be blocked');
-                throw new Error('Content blocked by safety filters or no response generated');
-            }
-            const candidate = response.candidates[0];
-            console.log('First candidate:', JSON.stringify(candidate, null, 2));
-            // Check if response has text
-            if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
-                console.error('No content parts in candidate');
-                console.error('Finish reason:', candidate.finishReason);
-                console.error('Safety ratings:', candidate.safetyRatings);
-                throw new Error('Empty response from Gemini API - check finish reason and safety ratings above');
-            }
-            const text = candidate.content.parts[0].text;
-            if (!text || text.trim() === '') {
-                throw new Error('Empty text in Gemini response');
-            }
-            // Step 5: Parse AI response
-            console.log('Raw Gemini response:', text);
-            // Extract JSON from response (handle markdown code blocks)
-            let jsonText = text.trim();
-            if (jsonText.startsWith('```json')) {
-                jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-            }
-            else if (jsonText.startsWith('```')) {
-                jsonText = jsonText.replace(/```\n?/g, '');
-            }
-            let aiData;
-            try {
-                aiData = JSON.parse(jsonText);
-            }
-            catch (parseError) {
-                console.error('JSON parse error:', parseError);
-                console.error('Failed to parse:', jsonText);
-                // Fallback: create basic object from extracted content
-                aiData = {
-                    title: extractedContent.title || 'Untitled',
-                    summary: text.slice(0, 500) || 'No summary available',
-                    tags: ['Uncategorized']
-                };
-            }
-            // Step 6: Validate and construct result
-            const processingTime = Date.now() - startTime;
-            const type = mapToSimpleType(extractedContent.contentType);
+            const text = response.text();
+            // Standard JSON parsing logic
+            const aiData = JSON.parse(text);
+            // Validate that we have required fields
+            const title = aiData.title || extractedContent.title || new URL(url).hostname;
+            const summary = aiData.summary || 'Summary not available for this content.';
+            const tags = Array.isArray(aiData.tags) && aiData.tags.length > 0
+                ? aiData.tags
+                : ['Link'];
             return {
-                title: aiData.title || extractedContent.title || 'Untitled',
-                summary: aiData.summary || 'No summary available',
-                tags: Array.isArray(aiData.tags) ? aiData.tags.slice(0, 3) : [],
-                type,
+                title,
+                summary,
+                tags,
+                type: mapToSimpleType(extractedContent.contentType),
                 aiMetadata: {
-                    model: process.env.GEMINI_MODEL || 'gemini-pro',
-                    processingTime,
+                    model: MODEL_ID,
+                    processingTime: Date.now() - startTime,
                     extractedContentLength: extractedContent.text.length
                 }
             };
         }
         catch (error) {
             console.error('AI Analysis Error:', error);
-            // Fallback: Return basic info if AI fails
+            // Enhanced fallback: Return a "Partial" object with URL as title
+            // This ensures the card is NEVER empty
             const processingTime = Date.now() - startTime;
             const contentType = (0, contentExtractor_1.detectContentType)(url);
+            // Extract meaningful title from URL
+            let fallbackTitle;
+            try {
+                const urlObj = new URL(url);
+                // Use pathname last segment or hostname
+                const pathSegments = urlObj.pathname.split('/').filter(Boolean);
+                if (pathSegments.length > 0) {
+                    // Clean up the last segment (remove file extensions, decode URI)
+                    fallbackTitle = decodeURIComponent(pathSegments[pathSegments.length - 1])
+                        .replace(/[-_]/g, ' ')
+                        .replace(/\.[^.]+$/, ''); // Remove file extension
+                }
+                else {
+                    fallbackTitle = urlObj.hostname;
+                }
+            }
+            catch (_a) {
+                fallbackTitle = url;
+            }
             return {
-                title: url.split('/').pop() || 'Untitled Link',
-                summary: 'AI analysis unavailable. Please add a summary manually.',
-                tags: ['Uncategorized'],
+                title: fallbackTitle || url,
+                summary: 'AI analysis could not be completed for this link. The content may be protected or unavailable.',
+                tags: ['Saved Link'],
                 type: mapToSimpleType(contentType),
                 aiMetadata: {
                     model: 'fallback',

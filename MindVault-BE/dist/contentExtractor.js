@@ -1,6 +1,4 @@
 "use strict";
-// Content Extractor Service
-// Extracts text content from various URL types (articles, YouTube, Twitter, etc.)
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -43,9 +41,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.detectContentType = detectContentType;
 exports.extractContent = extractContent;
+// Content Extractor Service
+// Extracts text content from various URL types (articles, YouTube, Twitter, etc.)
+const axios_1 = __importDefault(require("axios"));
 const cheerio = __importStar(require("cheerio"));
 const youtube_transcript_1 = require("youtube-transcript");
 /**
@@ -84,26 +88,42 @@ function extractYouTubeVideoId(url) {
 /**
  * Extract YouTube transcript
  */
+/**
+ * Enhanced YouTube extraction
+ */
 function extractYouTubeContent(url) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const videoId = extractYouTubeVideoId(url);
-            if (!videoId) {
+            if (!videoId)
                 throw new Error('Invalid YouTube URL');
+            // 1. Fetch Metadata (Title & Thumbnail) without an API key
+            let title = 'YouTube Video';
+            let thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+            try {
+                const metaResponse = yield axios_1.default.get(`https://noembed.com/embed?url=${url}`);
+                if (metaResponse.data && metaResponse.data.title) {
+                    title = metaResponse.data.title;
+                }
             }
-            // Fetch transcript
+            catch (metaError) {
+                console.warn('Metadata fetch failed, using defaults');
+            }
+            // 2. Fetch Transcript
             const transcript = yield youtube_transcript_1.YoutubeTranscript.fetchTranscript(videoId);
             const text = transcript.map(item => item.text).join(' ');
             return {
-                text: text.slice(0, 10000), // Limit to 10k chars
-                contentType: 'youtube'
+                text: text.slice(0, 15000), // Gemini 3 can handle more, so 15k is safe
+                title: title,
+                contentType: 'youtube',
+                // thumbnail is optional in your interface, add it if you update ExtractedContent
             };
         }
         catch (error) {
             console.error('YouTube extraction error:', error);
-            // Fallback: Return placeholder if transcript unavailable
             return {
-                text: 'Transcript unavailable for this video.',
+                text: 'Transcript unavailable. Please check if captions are enabled for this video.',
+                title: 'YouTube Video',
                 contentType: 'youtube'
             };
         }
@@ -115,15 +135,17 @@ function extractYouTubeContent(url) {
 function extractArticleContent(url) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const response = yield fetch(url, {
+            const response = yield axios_1.default.get(url, {
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (compatible; LinkNest/1.0; +http://linknest.app)'
-                }
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Referer': 'https://www.google.com/',
+                },
+                timeout: 15000 // Increase timeout to 15 seconds
             });
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            const html = yield response.text();
+            // axios throws on non-2xx, so no need to check response.ok
+            const html = response.data;
             const $ = cheerio.load(html);
             // Remove script, style, and nav elements
             $('script, style, nav, footer, header, iframe, noscript').remove();
@@ -176,15 +198,17 @@ function extractArticleContent(url) {
 function extractTwitterContent(url) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const response = yield fetch(url, {
+            const response = yield axios_1.default.get(url, {
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (compatible; LinkNest/1.0; +http://linknest.app)'
-                }
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Referer': 'https://www.google.com/',
+                },
+                timeout: 15000 // Increase timeout to 15 seconds
             });
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            const html = yield response.text();
+            // axios throws on non-2xx, so no need to check response.ok
+            const html = response.data;
             const $ = cheerio.load(html);
             // Get title (usually the first tweet text)
             const title = $('meta[property="og:title"]').attr('content') ||
@@ -213,15 +237,17 @@ function extractTwitterContent(url) {
 function extractGitHubContent(url) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const response = yield fetch(url, {
+            const response = yield axios_1.default.get(url, {
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (compatible; LinkNest/1.0; +http://linknest.app)'
-                }
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Referer': 'https://www.google.com/',
+                },
+                timeout: 15000 // Increase timeout to 15 seconds
             });
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            const html = yield response.text();
+            // axios throws on non-2xx, so no need to check response.ok
+            const html = response.data;
             const $ = cheerio.load(html);
             const title = $('meta[property="og:title"]').attr('content');
             const description = $('meta[property="og:description"]').attr('content');
