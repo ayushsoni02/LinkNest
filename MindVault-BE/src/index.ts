@@ -10,7 +10,7 @@ import { userMiddleware } from './middleware';
 import { random } from './utils';
 import authRoutes from "./auth";
 import cors from "cors";
-import path from "path";
+
 import passport from 'passport';
 import session from 'express-session';
 import { configurePassport } from './passport';

@@ -5,15 +5,7 @@ import OpenIcon from "../icons/ShareIcon";
 import WhatsAppIcon from "../icons/Whatsapp";
 import ConfirmModal from "./ConfirmModel";
 
-declare global {
-  interface Window {
-    twttr?: {
-      widgets?: {
-        load: (element?: HTMLElement | null) => void;
-      };
-    };
-  }
-}
+// Note: twttr type is now provided by react-social-media-embed
 
 interface CardProps {
   id: string; // MongoDB _id
@@ -33,8 +25,10 @@ export default function Card({ id, title, link, type, onDelete }: CardProps) {
   };
 
   useEffect(() => {
-    if (type === "twitter" && window.twttr?.widgets) {
-      window.twttr.widgets.load(tweetRef.current);
+    // Use any cast to avoid conflict with react-social-media-embed types
+    const twttr = (window as any).twttr;
+    if (type === "twitter" && twttr?.widgets) {
+      twttr.widgets.load(tweetRef.current);
     }
   }, [type, link]);
 

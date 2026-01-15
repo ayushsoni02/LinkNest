@@ -2,21 +2,16 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { BACKEND_URL } from "../Config";
 
-// Updated Content type to match backend schema
+// Content type - simplified without AI metadata
 export type Content = { 
     _id: string; 
     title: string; 
     type: string; 
     link: string;
     tags: string[];
-    summary?: string;
-    aiMetadata?: {
-        model: string;
-        tokensUsed?: number;
-        processingTime: number;
-        extractedContentLength: number;
-    };
-    extractedContent?: string;
+    description?: string;
+    summary?: string; // Legacy field for backwards compatibility
+    image?: string | null;
     nestId: { _id: string; name: string; description?: string } | null;
     createdAt: string;
 };

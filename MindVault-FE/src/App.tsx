@@ -11,7 +11,6 @@ import { ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import OAuthCallback from "./Pages/OAuthCallback"
 import NestWorkspace from "./Pages/NestWorkspace"
-import UniversalAddDemo from "./Pages/UniversalAddDemo"
 
 
 function App() {
@@ -33,7 +32,6 @@ function App() {
       <Route path="/about" element={<About />} />
       <Route path="/features" element={<Features />} />
       <Route path="/nest/:id" element={<NestWorkspace />} />
-      <Route path="/demo" element={<UniversalAddDemo />} />
       <Route path="oauth-callback" element={<OAuthCallback/>}/>
     </Routes>
   </BrowserRouter>
@@ -41,5 +39,3 @@ function App() {
 }
 
 export default App
-
-

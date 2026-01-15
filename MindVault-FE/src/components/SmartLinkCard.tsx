@@ -1,25 +1,71 @@
-import { useState, Fragment, useRef, useEffect } from 'react';
+import { useState, Fragment, useRef, useCallback } from 'react';
 import { Dialog, Transition, Menu } from '@headlessui/react';
-import { Share2, Trash2, ExternalLink, X, PlayCircle, MoreVertical, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Share2, 
+  Trash2, 
+  ExternalLink, 
+  X, 
+  MoreVertical, 
+  Check,
+  Copy,
+  Globe,
+  Play
+} from 'lucide-react';
+import { YouTubeEmbed, TwitterEmbed } from 'react-social-media-embed';
 import { useNests } from '../hooks/useNests';
 import axios from 'axios';
 import { BACKEND_URL } from '../Config';
-import LivePreviewPortal from './LivePreviewPortal';
+import { toast } from 'react-toastify';
 
 interface SmartLinkCardProps {
   id: string;
   title: string;
   url: string;
-  type: string;
+  type: string; // 'youtube' | 'twitter' | 'article' | 'github' | 'medium' | 'substack' | 'other'
   tags?: string[];
   date?: string;
-  summary?: string;     
-  fullSummary?: string; 
-  thumbnailUrl?: string;
+  description?: string;  // Short snippet (2 lines)
+  thumbnailUrl?: string | null; // og:image or site screenshot
+  favicon?: string;
+  siteName?: string;
   currentNestId?: string | null;
   onDelete?: (id: string) => void;
   onShare?: () => void;
+  onRefresh?: () => void;
+  index?: number; // For staggered animations
 }
+
+// Helper to extract YouTube Video ID
+const extractYouTubeId = (url: string): string | null => {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?]+)/,
+    /youtube\.com\/shorts\/([^&\s?]+)/
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+};
+
+// Helper to extract Twitter/X Post ID
+const extractTweetUrl = (url: string): string => {
+  // Normalize x.com to twitter.com for the embed component
+  return url.replace('x.com', 'twitter.com');
+};
+
+// Content Type Badge Colors
+const getTypeBadgeStyle = (type: string) => {
+  switch (type) {
+    case 'youtube': return 'bg-red-500/20 text-red-400 border-red-500/30';
+    case 'twitter': return 'bg-sky-500/20 text-sky-400 border-sky-500/30';
+    case 'github': return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
+    case 'medium': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+    case 'substack': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
+    default: return 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30';
+  }
+};
 
 export default function SmartLinkCard({
   id,
@@ -28,21 +74,53 @@ export default function SmartLinkCard({
   type,
   tags = [],
   date = new Date().toLocaleDateString(),
-  summary = "No summary available for this content.",
-  fullSummary,
+  description,
   thumbnailUrl,
+  favicon,
+  siteName,
   currentNestId,
   onDelete,
-  onShare
+  onShare,
+  onRefresh,
+  index = 0
 }: SmartLinkCardProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [showEmbed, setShowEmbed] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const { nests } = useNests();
-  
-  // Live Preview State
-  const [showPreview, setShowPreview] = useState(false);
-  const [cardPosition, setCardPosition] = useState({ x: 0, y: 0, cardWidth: 0, cardHeight: 0 });
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  
+  // Determine content type for rendering
+  const contentType = type.toLowerCase();
+  const isYouTube = contentType === 'youtube';
+  const isTwitter = contentType === 'twitter';
+  const isSocialEmbed = isYouTube || isTwitter;
+  
+  // YouTube specific
+  const youtubeId = isYouTube ? extractYouTubeId(url) : null;
+  const tweetUrl = isTwitter ? extractTweetUrl(url) : null;
+  
+  // Get thumbnail - YouTube has auto-generation
+  const getThumbnail = () => {
+    if (thumbnailUrl && !imageError) return thumbnailUrl;
+    if (isYouTube && youtubeId) {
+      return `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`;
+    }
+    return null;
+  };
+  
+  const finalThumbnail = getThumbnail();
+  
+  // Domain extraction for articles
+  const getDomain = () => {
+    try {
+      return new URL(url).hostname.replace('www.', '');
+    } catch {
+      return 'Link';
+    }
+  };
 
   const handleMoveToNest = async (nestId: string | null) => {
     try {
@@ -50,164 +128,335 @@ export default function SmartLinkCard({
         { nestId },
         { headers: { Authorization: localStorage.getItem('token') || '' } }
       );
-      window.location.reload(); // Refresh to show changes
+      toast.success('Moved successfully!');
+      onRefresh?.();
     } catch (error) {
       console.error('Error moving to nest:', error);
-      alert('Failed to move content to nest');
+      toast.error('Failed to move content');
     }
   };
 
-  // Hover Logic with 500ms delay (reduced from 1s for better UX)
-  const handleMouseEnter = () => {
-    console.log('🎯 Mouse entered card');
-    if (cardRef.current) {
-      const rect = cardRef.current.getBoundingClientRect();
-      setCardPosition({
-        x: rect.left,
-        y: rect.top,
-        cardWidth: rect.width,
-        cardHeight: rect.height
-      });
-      console.log('📍 Card position:', rect);
-    }
-
-    // Set timeout for 500ms (reduced for better UX)
-    hoverTimeoutRef.current = setTimeout(() => {
-      console.log('⏰ Timeout reached - showing preview');
-      setShowPreview(true);
-    }, 1000); // Changed from 1000ms to 500ms
-  };
-
-  const handleMouseLeave = () => {
-    console.log('👋 Pointer left card, showPreview:', showPreview);
-    
-    // Only clear timeout if preview hasn't appeared yet
-    // Once preview is showing, only close via backdrop click or Escape
-    if (hoverTimeoutRef.current && !showPreview) {
-      console.log('🚫 Clearing timeout (preview not yet shown)');
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    } else if (showPreview) {
-      console.log('✋ Preview is visible, ignoring pointer leave');
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await axios.delete(
+        `${BACKEND_URL}/api/v1/content/${id}`,
+        { headers: { Authorization: localStorage.getItem('token') || '' } }
+      );
+      toast.success('Deleted successfully');
+      onDelete?.(id);
+    } catch {
+      toast.error('Failed to delete');
     }
   };
 
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Helper to extract YouTube Thumbnail if not provided
-  const getThumbnail = () => {
-    if (thumbnailUrl) return thumbnailUrl;
-    if (type === 'youtube' && url) {
-       const parts = url.split('v=');
-       const videoId = parts.length > 1 ? parts[1].split('&')[0] : null;
-       if (videoId) return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+  const handleCopy = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast.success('Link copied!', { autoClose: 1500 });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Failed to copy');
     }
-    return null;
+  }, [url]);
+
+  const handleOpenNewTab = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const finalThumbnail = getThumbnail();
-  const isMediaCard = (type === 'youtube' || type === 'twitter') && finalThumbnail;
-
-  return (
-    <>
-      <div
-        ref={cardRef}
-        onClick={() => setIsOpen(true)}
-        onPointerEnter={handleMouseEnter}
-        onPointerLeave={handleMouseLeave}
-        className="group relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full overflow-hidden"
-      >
-        <div className="flex gap-4 h-full">
-            {/* Left: Thumbnail for Media Types */}
-            {isMediaCard && (
-                <div className="w-1/3 shrink-0 relative rounded-2xl overflow-hidden aspect-video bg-zinc-100">
-                    <img src={finalThumbnail} alt="Thumbnail" className="w-full h-full object-cover" />
-                    {type === 'youtube' && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-all">
-                             <div className="w-10 h-10 bg-white/90 rounded-full flex items-center justify-center pl-1 shadow-md">
-                                <PlayCircle size={20} className="text-zinc-900" />
-                             </div>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Right: Content */}
-            <div className={`flex flex-col justify-between ${isMediaCard ? 'w-2/3' : 'w-full'}`}>
-                <div>
-                     {/* Header: Date & Title */}
-                    <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1 pr-2">
-                            <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-100 leading-tight line-clamp-2 group-hover:text-indigo-600 transition-colors">
-                                {title}
-                            </h3>
-                             <p className="text-xs font-semibold text-zinc-400 mt-1 uppercase tracking-wider">{date}</p>
-                        </div>
-                        
-                        {/* Hover Actions */}
-                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); onShare?.(); }}
-                                className="p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-zinc-100 rounded-full transition-colors"
-                            >
-                                <Share2 size={16} />
-                            </button>
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); onDelete?.(id); }}
-                                className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-zinc-100 rounded-full transition-colors"
-                            >
-                                <Trash2 size={16} />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Summary Lines */}
-                    {!isMediaCard && summary && (
-                         <div className="mb-4">
-                            <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed line-clamp-3">
-                                {summary}
-                            </p>
-                        </div>
-                    )}
-
-                </div>
+  // ============================================
+  // HYBRID RENDERER - The Core Logic
+  // ============================================
+  const renderContent = () => {
+    // 1. YouTube - Placeholder mode, full iframe on hover/click
+    if (isYouTube && youtubeId) {
+      return (
+        <div className="relative w-full aspect-video bg-slate-900 rounded-2xl overflow-hidden group/embed">
+          <AnimatePresence mode="wait">
+            {!showEmbed ? (
+              // Placeholder Mode
+              <motion.div
+                key="placeholder"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0"
+              >
+                <img 
+                  src={finalThumbnail || `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`}
+                  alt={title}
+                  className="w-full h-full object-cover"
+                  onError={() => setImageError(true)}
+                />
+                {/* Dark overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
                 
-                {/* Footer: Tags */}
-                <div className="flex flex-wrap gap-2 mt-auto">
-                    {tags && tags.length > 0 ? tags.map((tag, i) => (
-                        <span key={i} className="px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 text-[10px] font-bold uppercase tracking-wide rounded-full">
-                            #{tag}
-                        </span>
-                    )) : (
-                       <>
-                         <span className="px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 text-[10px] font-bold uppercase tracking-wide rounded-full">
-                            #{type}
-                        </span>
-                       </>
-                    )}
+                {/* Play Button */}
+                <motion.button
+                  onClick={(e) => { e.stopPropagation(); setShowEmbed(true); }}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-2xl shadow-red-500/30">
+                    <Play size={28} className="text-white ml-1" fill="white" />
+                  </div>
+                </motion.button>
+                
+                {/* YouTube Badge */}
+                <div className="absolute top-3 left-3 px-2 py-1 bg-red-600 rounded-md flex items-center gap-1.5">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="currentColor">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/>
+                    <path fill="white" d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                  <span className="text-xs font-semibold text-white">YouTube</span>
                 </div>
-            </div>
+              </motion.div>
+            ) : (
+              // Live Embed Mode
+              <motion.div
+                key="embed"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="w-full h-full"
+              >
+                <YouTubeEmbed 
+                  url={url} 
+                  width="100%" 
+                  height="100%"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    }
+
+    // 2. Twitter - Native Tweet Embed
+    if (isTwitter && tweetUrl) {
+      return (
+        <div className="relative w-full min-h-[300px] max-h-[500px] bg-slate-900 rounded-2xl overflow-hidden">
+          {/* Twitter Badge */}
+          <div className="absolute top-3 left-3 z-10 px-2 py-1 bg-black rounded-md flex items-center gap-1.5">
+            <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+            <span className="text-xs font-semibold text-white">𝕏</span>
+          </div>
+          
+          <div className="p-2 [&>div]:!bg-transparent [&_iframe]:rounded-xl">
+            <TwitterEmbed 
+              url={tweetUrl}
+              width="100%"
+            />
+          </div>
+        </div>
+      );
+    }
+
+    // 3. Rich Article Card - For Medium, Substack, GitHub, and other articles
+    return (
+      <div className="relative w-full bg-slate-900/50 rounded-2xl overflow-hidden border border-slate-700/50">
+        {/* Large og:image or placeholder */}
+        {finalThumbnail ? (
+          <div className="relative h-44 overflow-hidden">
+            <img 
+              src={finalThumbnail}
+              alt={title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              onError={() => setImageError(true)}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
+          </div>
+        ) : (
+          // Fallback: Gradient with Domain icon
+          <div className="relative h-32 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
+            <Globe size={48} className="text-slate-600" />
+          </div>
+        )}
+        
+        {/* Content */}
+        <div className="p-4 space-y-2">
+          {/* Site info */}
+          <div className="flex items-center gap-2">
+            {favicon ? (
+              <img 
+                src={favicon} 
+                alt="" 
+                className="w-4 h-4 rounded" 
+                onError={(e) => (e.currentTarget.style.display = 'none')}
+              />
+            ) : (
+              <Globe size={14} className="text-slate-500" />
+            )}
+            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider truncate">
+              {siteName || getDomain()}
+            </span>
+          </div>
+          
+          {/* Title - Bold */}
+          <h3 className="font-bold text-white text-lg leading-tight line-clamp-2 group-hover:text-indigo-300 transition-colors">
+            {title}
+          </h3>
+          
+          {/* Description Snippet - 2 lines */}
+          {description && (
+            <p className="text-sm text-slate-400 line-clamp-2 leading-relaxed">
+              {description}
+            </p>
+          )}
+          
+          {/* Type Badge */}
+          <div className="pt-1">
+            <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-full border ${getTypeBadgeStyle(contentType)}`}>
+              {contentType}
+            </span>
+          </div>
         </div>
       </div>
+    );
+  };
 
-      {/* Live Preview Portal */}
-      <LivePreviewPortal
-        isVisible={showPreview}
-        url={url}
-        type={type}
-        position={cardPosition}
-        onClose={() => setShowPreview(false)}
-      />
+  // ============================================
+  // MAIN CARD WRAPPER
+  // ============================================
+  return (
+    <>
+      <motion.div
+        ref={cardRef}
+        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ 
+          duration: 0.4, 
+          delay: index * 0.05,
+          ease: [0.25, 0.46, 0.45, 0.94]
+        }}
+        whileHover={{ y: -4 }}
+        onClick={() => setIsOpen(true)}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          // Reset YouTube embed on leave if not playing
+          if (isYouTube && showEmbed) {
+            setShowEmbed(false);
+          }
+        }}
+        className={`
+          group relative cursor-pointer
+          rounded-3xl overflow-hidden
+          bg-slate-900/80 backdrop-blur-xl
+          border border-slate-700/50
+          shadow-lg hover:shadow-2xl hover:shadow-indigo-500/10
+          transition-all duration-300
+          ${isSocialEmbed ? 'row-span-2' : ''} 
+        `}
+      >
+        {/* Live Window Content */}
+        <div className="p-3">
+          {renderContent()}
+        </div>
+        
+        {/* Bottom Info Bar - Only for non-embeds */}
+        {!isSocialEmbed && (
+          <div className="px-4 pb-4">
+            <div className="flex items-center justify-between">
+              {/* Tags */}
+              <div className="flex flex-wrap gap-1.5">
+                {tags.slice(0, 2).map((tag, i) => (
+                  <span 
+                    key={i}
+                    className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded-full bg-slate-800/80 text-slate-400 border border-slate-700/50"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+              
+              {/* Date */}
+              <span className="text-xs text-slate-500">{date}</span>
+            </div>
+          </div>
+        )}
+        
+        {/* Social Embeds - Title & Tags below */}
+        {isSocialEmbed && (
+          <div className="px-4 pb-4 space-y-2">
+            <h3 className="font-bold text-white text-sm leading-tight line-clamp-2 group-hover:text-indigo-300 transition-colors">
+              {title}
+            </h3>
+            <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-1.5">
+                {tags.slice(0, 2).map((tag, i) => (
+                  <span 
+                    key={i}
+                    className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded-full bg-slate-800/80 text-slate-400 border border-slate-700/50"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+              <span className="text-xs text-slate-500">{date}</span>
+            </div>
+          </div>
+        )}
 
-       {/* --- Expanded Slide-over Panel (Keeping existing logic) --- */}
-       <Transition appear show={isOpen} as={Fragment}>
+        {/* Quick Actions Overlay - appears on hover */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isHovered ? 1 : 0 }}
+          className="absolute top-5 right-5 flex items-center gap-1.5 z-20"
+        >
+          {/* Copy Button */}
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleCopy}
+            className="p-2 rounded-full bg-slate-800/90 border border-slate-600/50 text-slate-300 hover:text-white hover:bg-slate-700 transition-all backdrop-blur-sm"
+            title="Copy URL"
+          >
+            {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+          </motion.button>
+
+          {/* Open in new tab */}
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleOpenNewTab}
+            className="p-2 rounded-full bg-slate-800/90 border border-slate-600/50 text-slate-300 hover:text-white hover:bg-slate-700 transition-all backdrop-blur-sm"
+            title="Open in new tab"
+          >
+            <ExternalLink size={14} />
+          </motion.button>
+
+          {/* Share */}
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={(e) => { e.stopPropagation(); onShare?.(); }}
+            className="p-2 rounded-full bg-slate-800/90 border border-slate-600/50 text-slate-300 hover:text-white hover:bg-slate-700 transition-all backdrop-blur-sm"
+            title="Share"
+          >
+            <Share2 size={14} />
+          </motion.button>
+
+          {/* Delete */}
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleDelete}
+            className="p-2 rounded-full bg-slate-800/90 border border-red-900/50 text-red-400 hover:text-red-300 hover:bg-red-900/50 transition-all backdrop-blur-sm"
+            title="Delete"
+          >
+            <Trash2 size={14} />
+          </motion.button>
+        </motion.div>
+      </motion.div>
+
+      {/* --- Detail Slide-over Panel --- */}
+      <Transition appear show={isOpen} as={Fragment}>
         <Dialog as="div" className="relative z-50" onClose={() => setIsOpen(false)}>
           <Transition.Child
             as={Fragment}
@@ -218,7 +467,7 @@ export default function SmartLinkCard({
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black/20 dark:bg-black/50 backdrop-blur-sm" />
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-hidden">
@@ -233,85 +482,85 @@ export default function SmartLinkCard({
                   leaveFrom="translate-x-0"
                   leaveTo="translate-x-full"
                 >
-                  <Dialog.Panel className="pointer-events-auto w-screen max-w-md">
-                    <div className="flex h-full flex-col bg-white dark:bg-zinc-900 shadow-2xl">
+                  <Dialog.Panel className="pointer-events-auto w-screen max-w-lg">
+                    <div className="flex h-full flex-col bg-slate-900 shadow-2xl border-l border-slate-800">
                       
                       {/* Panel Header */}
-                      <div className="flex items-start justify-between px-6 py-6 border-b border-zinc-100 dark:border-zinc-800">
-                         <div>
-                            <Dialog.Title className="text-xl font-bold text-zinc-900 dark:text-white leading-tight">
-                              {title}
-                            </Dialog.Title>
+                      <div className="flex items-start justify-between px-6 py-5 border-b border-slate-800">
+                        <div className="flex-1 pr-4">
+                          <Dialog.Title className="text-xl font-bold text-white leading-tight">
+                            {title}
+                          </Dialog.Title>
+                          <div className="flex items-center gap-2 mt-2">
+                            {favicon && (
+                              <img src={favicon} alt="" className="w-4 h-4 rounded" />
+                            )}
                             <a 
                               href={url} 
                               target="_blank" 
                               rel="noreferrer" 
-                              className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm mt-2 font-medium"
+                              className="inline-flex items-center gap-1 text-indigo-400 hover:text-indigo-300 text-sm font-medium truncate"
                             >
-                              Visit Source <ExternalLink size={12} />
+                              {getDomain()} <ExternalLink size={12} />
                             </a>
-                         </div>
-                        <div className="ml-3 flex h-7 items-center">
-                          <button
-                            type="button"
-                            className="rounded-md bg-white dark:bg-zinc-900 text-zinc-400 hover:text-zinc-500 focus:outline-none"
-                            onClick={() => setIsOpen(false)}
-                          >
-                            <span className="sr-only">Close panel</span>
-                            <X size={24} />
-                          </button>
+                          </div>
                         </div>
+                        <button
+                          type="button"
+                          className="rounded-lg bg-slate-800 p-2 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <X size={20} />
+                        </button>
                       </div>
 
-                      {/* Panel Body */}
-                      <div className="flex-1 overflow-y-auto px-6 py-6">
-                         
-                         {finalThumbnail && (
-                             <div className="mb-6 rounded-xl overflow-hidden border border-zinc-200 shadow-sm">
-                                 <img src={finalThumbnail} alt="Thumbnail Preview" className="w-full object-cover" />
-                             </div>
-                         )}
+                      {/* Panel Body - Live Preview */}
+                      <div className="flex-1 overflow-y-auto p-6">
+                        {/* Live Embed */}
+                        <div className="rounded-2xl overflow-hidden border border-slate-700 mb-6">
+                          {isYouTube && youtubeId && (
+                            <YouTubeEmbed url={url} width="100%" />
+                          )}
+                          {isTwitter && tweetUrl && (
+                            <div className="bg-black p-2">
+                              <TwitterEmbed url={tweetUrl} width="100%" />
+                            </div>
+                          )}
+                          {!isSocialEmbed && finalThumbnail && (
+                            <img src={finalThumbnail} alt={title} className="w-full" />
+                          )}
+                        </div>
+                        
+                        {/* Tags */}
+                        {tags.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-6">
+                            {tags.map((tag, i) => (
+                              <span 
+                                key={i} 
+                                className="px-3 py-1 bg-slate-800 text-slate-300 text-sm rounded-full border border-slate-700"
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
 
-                         <div className="space-y-8">
-                             <section>
-                                 <h4 className="flex items-center gap-2 text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider mb-3">
-                                     <span className="p-1 bg-indigo-100 text-indigo-600 rounded">✨</span> 
-                                     AI Summary
-                                 </h4>
-                                 <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed text-sm">
-                                     {fullSummary || summary}
-                                 </p>
-                             </section>
-
-                             <section>
-                                 <h4 className="flex items-center gap-2 text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider mb-3">
-                                     <span className="p-1 bg-emerald-100 text-emerald-600 rounded">🧠</span> 
-                                     Key Takeaways
-                                 </h4>
-                                 <ul className="space-y-2">
-                                     {['Core concept explained clearly', 'Practical examples provided', 'Good reference for future projects'].map((item, i) => (
-                                         <li key={i} className="flex gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-                                             <span className="text-zinc-300">•</span> {item}
-                                         </li>
-                                     ))}
-                                 </ul>
-                             </section>
-
-                             <div className="flex flex-wrap gap-2 pt-4 border-t border-zinc-100">
-                                 {tags.map((tag, i) => (
-                                     <span key={i} className="px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 text-xs rounded-full">
-                                         #{tag}
-                                     </span>
-                                 ))}
-                             </div>
-                         </div>
+                        {/* Description */}
+                        {description && (
+                          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+                            <p className="text-slate-300 text-sm leading-relaxed">
+                              {description}
+                            </p>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="flex flex-shrink-0 justify-between px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-                        <Menu as="div" className="relative inline-block text-left">
-                          <Menu.Button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-700 focus:outline-none">
+                      {/* Panel Footer - Actions */}
+                      <div className="flex justify-between items-center px-6 py-4 border-t border-slate-800 bg-slate-900/50">
+                        <Menu as="div" className="relative">
+                          <Menu.Button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-200 bg-slate-800 border border-slate-700 rounded-lg hover:bg-slate-700 transition-colors">
                             Move to Nest
-                            <MoreVertical size={14} className="text-zinc-400" />
+                            <MoreVertical size={14} className="text-slate-400" />
                           </Menu.Button>
 
                           <Transition
@@ -323,18 +572,18 @@ export default function SmartLinkCard({
                             leaveFrom="transform opacity-100 scale-100"
                             leaveTo="transform opacity-0 scale-95"
                           >
-                            <Menu.Items className="absolute bottom-full left-0 mb-2 w-56 origin-bottom-left rounded-md bg-white dark:bg-zinc-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none max-h-60 overflow-y-auto">
-                              <div className="py-1">
+                            <Menu.Items className="absolute bottom-full left-0 mb-2 w-56 origin-bottom-left rounded-xl bg-slate-800 border border-slate-700 shadow-2xl overflow-hidden z-50">
+                              <div className="p-1.5">
                                 <Menu.Item>
                                   {({ active }) => (
                                     <button
                                       onClick={() => handleMoveToNest(null)}
                                       className={`${
-                                        active ? 'bg-zinc-100 dark:bg-zinc-700' : ''
-                                      } group flex w-full items-center justify-between px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200`}
+                                        active ? 'bg-slate-700' : ''
+                                      } w-full flex items-center justify-between px-3 py-2 text-sm text-slate-200 rounded-lg`}
                                     >
                                       <span>Uncategorized</span>
-                                      {currentNestId === null && <Check size={16} className="text-indigo-600" />}
+                                      {currentNestId === null && <Check size={16} className="text-indigo-400" />}
                                     </button>
                                   )}
                                 </Menu.Item>
@@ -345,11 +594,11 @@ export default function SmartLinkCard({
                                       <button
                                         onClick={() => handleMoveToNest(nest._id)}
                                         className={`${
-                                          active ? 'bg-zinc-100 dark:bg-zinc-700' : ''
-                                        } group flex w-full items-center justify-between px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200`}
+                                          active ? 'bg-slate-700' : ''
+                                        } w-full flex items-center justify-between px-3 py-2 text-sm text-slate-200 rounded-lg`}
                                       >
                                         <span>📁 {nest.name}</span>
-                                        {currentNestId === nest._id && <Check size={16} className="text-indigo-600" />}
+                                        {currentNestId === nest._id && <Check size={16} className="text-indigo-400" />}
                                       </button>
                                     )}
                                   </Menu.Item>
@@ -363,9 +612,10 @@ export default function SmartLinkCard({
                           href={url}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-lg transition-colors shadow-lg shadow-indigo-500/20"
                         >
-                          Read Full Article
+                          <ExternalLink size={16} />
+                          Open Original
                         </a>
                       </div>
                     </div>

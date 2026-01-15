@@ -1,6 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/custom/Card";
 import { Zap, Shield, Users, Search, Tag, BarChart3 } from "lucide-react";
-import SmartLinkCard from "./SmartLinkCard";
 
 const Features = () => {
   const features = [

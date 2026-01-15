@@ -89,8 +89,8 @@ export default function NestWorkspace() {
                     {viewMode === 'gallery' ? (
                         /* Gallery View */
                         <div className="h-full overflow-y-auto p-6 lg:p-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 max-w-7xl mx-auto">
-                                {nestLinks.map((link) => (
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 max-w-7xl mx-auto auto-rows-auto">
+                                {nestLinks.map((link, index) => (
                                     <SmartLinkCard 
                                         key={link._id} 
                                         id={link._id}
@@ -98,9 +98,16 @@ export default function NestWorkspace() {
                                         url={link.link}
                                         type={link.type}
                                         tags={link.tags}
-                                        date={new Date(link.createdAt).toLocaleDateString()}
-                                        summary={link.nestId?.name || 'No summary'}
+                                        date={new Date(link.createdAt).toLocaleDateString('en-US', {
+                                            month: 'short',
+                                            day: 'numeric'
+                                        })}
+                                        description={link.description}
+                                        thumbnailUrl={link.image}
+                                        siteName={link.nestId?.name || undefined}
+                                        favicon={`https://www.google.com/s2/favicons?domain=${new URL(link.link).hostname}&sz=64`}
                                         currentNestId={link.nestId?._id || null}
+                                        index={index}
                                     />
                                 ))}
                             </div>
