@@ -1,4 +1,10 @@
-// export const BACKEND_URL= "http://localhost:3000";
-// export const FRONTEND_URL = "http://localhost:5173";
-export const  BACKEND_URL = "https://cerebra.onrender.com"
-export const FRONTEND_URL = "https://cerebra-gamma.vercel.app"
+// Detect if we are in development mode or production
+const isDev = import.meta.env.MODE === 'development';
+
+export const BACKEND_URL = isDev 
+    ? "http://localhost:3000" 
+    : "https://cerebra.onrender.com";
+
+export const FRONTEND_URL = isDev 
+    ? "http://localhost:5173" 
+    : "https://cerebra-gamma.vercel.app";
