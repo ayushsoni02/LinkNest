@@ -57,6 +57,20 @@ export function useNests() {
     }
   };
 
+  const renameNest = async (nestId: string, newName: string) => {
+    try {
+      await axios.put(`${BACKEND_URL}/api/v1/nests/${nestId}`, { name: newName }, {
+        headers: {
+          'Authorization': localStorage.getItem('token') || ''
+        }
+      });
+      await fetchNests(); // Refresh the list
+    } catch (error) {
+      console.error("Error renaming nest:", error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     fetchNests();
     
@@ -68,5 +82,5 @@ export function useNests() {
     return () => clearInterval(interval);
   }, []);
 
-  return { nests, loading, fetchNests, createNest, deleteNest };
+  return { nests, loading, fetchNests, createNest, deleteNest, renameNest };
 }

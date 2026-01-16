@@ -15,7 +15,10 @@ import {
 } from "lucide-react";
 import ProfileDropdown from "./ProfileDropdown";
 import CreateNestModal from "./CreateNestModal";
-import { useNests } from "../hooks/useNests";
+import DeleteNestConfirmModal from "./DeleteNestConfirmModal";
+import RenameNestModal from "./RenameNestModal";
+import NestDropdownMenu from "./NestDropdownMenu";
+import { useNests, Nest } from "../hooks/useNests";
 import { useContent } from "../hooks/UseContent";
 
 type SidebarProps = {
@@ -29,8 +32,13 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onFilterChange 
   const location = useLocation();
   const [activeItem, setActiveItem] = useState("All");
   const [createNestOpen, setCreateNestOpen] = useState(false);
+  
+  // Modal states for nest actions
+  const [selectedNest, setSelectedNest] = useState<Nest | null>(null);
+  const [renameModalOpen, setRenameModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
-  const { nests, createNest } = useNests();
+  const { nests, createNest, deleteNest, renameNest } = useNests();
   const { contents } = useContent();
 
   const userString = localStorage.getItem("user");
@@ -60,12 +68,46 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onFilterChange 
     }
   };
 
-  const handleCreateNest = async (nestData: { name: string; icon: string; color: string; description: string }) => {
+  const handleCreateNest = async (nestData: { name: string; color: string }) => {
     try {
-      await createNest({ name: nestData.name, description: nestData.description });
+      await createNest({ name: nestData.name });
     } catch (error) {
       alert("Failed to create nest");
     }
+  };
+
+  const handleRenameNest = async (newName: string) => {
+    if (selectedNest) {
+      try {
+        await renameNest(selectedNest._id, newName);
+      } catch (error) {
+        alert("Failed to rename nest");
+      }
+    }
+  };
+
+  const handleDeleteNest = async () => {
+    if (selectedNest) {
+      try {
+        await deleteNest(selectedNest._id);
+        // Navigate to dashboard if currently viewing deleted nest
+        if (location.pathname === `/nest/${selectedNest._id}`) {
+          navigate("/Dashboard");
+        }
+      } catch (error) {
+        alert("Failed to delete nest");
+      }
+    }
+  };
+
+  const openRenameModal = (nest: Nest) => {
+    setSelectedNest(nest);
+    setRenameModalOpen(true);
+  };
+
+  const openDeleteModal = (nest: Nest) => {
+    setSelectedNest(nest);
+    setDeleteModalOpen(true);
   };
 
   const allTags = [...new Set(contents.flatMap(c => c.tags))].sort();
@@ -78,10 +120,23 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onFilterChange 
       transition={{ duration: 0.3, ease: "easeInOut" }}
       className="h-screen bg-slate-950/80 backdrop-blur-md border-r border-slate-800 text-slate-200 flex flex-col justify-between fixed top-0 left-0 z-30"
     >
+      {/* Modals */}
       <CreateNestModal 
         open={createNestOpen} 
         onClose={() => setCreateNestOpen(false)}
         onCreate={handleCreateNest}
+      />
+      <RenameNestModal
+        open={renameModalOpen}
+        onClose={() => setRenameModalOpen(false)}
+        onRename={handleRenameNest}
+        currentName={selectedNest?.name || ""}
+      />
+      <DeleteNestConfirmModal
+        open={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDeleteNest}
+        nestName={selectedNest?.name || ""}
       />
 
       {/* Content Area */}
@@ -230,24 +285,55 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onFilterChange 
           )}
           
           {nests.map((nest) => (
-            <SidebarItem 
+            <div
               key={nest._id}
-              text={nest.name} 
-              icon={
+              className="group relative"
+            >
+              <motion.div 
+                whileHover={{ x: isCollapsed ? 0 : 4 }}
+                onClick={() => {
+                  setActiveItem(nest.name);
+                  navigate(`/nest/${nest._id}`);
+                }}
+                className={`
+                  flex items-center gap-3 py-3 px-3 mb-2 cursor-pointer transition-all duration-200 rounded-xl relative
+                  ${activeItem === nest.name 
+                    ? "bg-slate-800/50 text-indigo-400 border-l-2 border-indigo-500" 
+                    : "text-slate-400 hover:bg-slate-800/30 hover:text-slate-300"
+                  }
+                  ${isCollapsed ? "justify-center" : ""}
+                `}
+                title={isCollapsed ? nest.name : ""}
+              >
                 <div 
-                  className="w-5 h-5 rounded flex items-center justify-center text-sm"
+                  className="w-5 h-5 rounded flex items-center justify-center text-sm flex-shrink-0"
                   style={{ backgroundColor: '#6366f1' + '30' }}
                 >
                   📁
                 </div>
-              } 
-              isActive={activeItem === nest.name}
-              isCollapsed={isCollapsed}
-              onClick={() => {
-                setActiveItem(nest.name);
-                navigate(`/nest/${nest._id}`);
-              }}
-            />
+                
+                {!isCollapsed && (
+                  <motion.div 
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    className="flex items-center gap-2 flex-1 min-w-0"
+                  >
+                    <span className="text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                      {nest.name}
+                    </span>
+                  </motion.div>
+                )}
+
+                {/* Three-dot menu - only visible on hover when not collapsed */}
+                {!isCollapsed && (
+                  <NestDropdownMenu
+                    onRename={() => openRenameModal(nest)}
+                    onDelete={() => openDeleteModal(nest)}
+                  />
+                )}
+              </motion.div>
+            </div>
           ))}
         </div>
       </div>
@@ -263,3 +349,4 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onFilterChange 
     </motion.div>
   );
 }
+

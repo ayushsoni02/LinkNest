@@ -235,6 +235,25 @@ app.delete('/api/v1/nests/:id', middleware_1.userMiddleware, (req, res) => __awa
         res.status(500).json({ message: 'Failed to delete nest' });
     }
 }));
+// rename nest
+app.put('/api/v1/nests/:id', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const nestId = req.params.id;
+        const { name } = req.body;
+        // @ts-ignore
+        const userId = req.userId;
+        if (!name) {
+            res.status(400).json({ message: 'Nest name is required' });
+            return;
+        }
+        yield db_1.NestModel.updateOne({ _id: nestId, userId }, { name });
+        res.json({ message: 'Nest renamed successfully' });
+    }
+    catch (err) {
+        console.error('Rename nest error:', err);
+        res.status(500).json({ message: 'Failed to rename nest' });
+    }
+}));
 app.put('/api/v1/content/:id', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const contentId = req.params.id;
