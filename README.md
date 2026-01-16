@@ -21,7 +21,7 @@ LinkNest is a second-brain web app that helps you **save**, **organize**, and **
 
 ## 📸 Preview
 
-<img width="960" height="508" alt="Screenshot 2025-07-17 at 5 12 51 PM" src="https://github.com/user-attachments/assets/78c9e481-fc04-46b6-abb4-3da73d7a7219" />
+<img width="1470" height="840" alt="Screenshot 2025-07-17 at 5 11 33 PM" src="https://github.com/user-attachments/assets/75ef40a2-f21a-456c-b46c-3ad177d435d9" />
 
  <!-- Replace with your dashboard screenshot -->
 

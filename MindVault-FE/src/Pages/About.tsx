@@ -33,7 +33,7 @@ const About = () => {
           <h2 className="text-2xl font-semibold mb-6 text-purple-600">📸 Dashboard Preview</h2>
           <div className="rounded-xl overflow-hidden shadow-lg border dark:border-gray-700 mb-4">
             <img
-              src="/pic-2.png"
+              src="/pic-3.png"
               alt="LinkNest Dashboard"
               className="w-full object-cover"
             />
