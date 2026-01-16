@@ -61,9 +61,9 @@ export default function MobileNav({ isOpen, onToggle, onFilterChange }: MobileNa
     }
   };
 
-  const handleCreateNest = async (nestData: { name: string; icon: string; color: string; description: string }) => {
+  const handleCreateNest = async (nestData: { name: string; color: string }) => {
     try {
-      await createNest({ name: nestData.name, description: nestData.description });
+      await createNest({ name: nestData.name });
     } catch (error) {
       alert("Failed to create nest");
     }
