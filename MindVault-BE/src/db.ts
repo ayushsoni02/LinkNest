@@ -4,11 +4,28 @@ require('dotenv').config()
 
 
 
-const mongoUrl = process.env.MONGO_URL;
-if (!mongoUrl) {
-    throw new Error("MONGO_URL is not defined in the environment variables");
-}
-mongoose.connect(mongoUrl);
+const connectDB = async () => {
+    try {
+        // Hide credentials in logs, but verify the variable exists
+        if (!process.env.MONGO_URL) {
+            throw new Error("MONGO_URL is missing from environment variables");
+        }
+
+        await mongoose.connect(process.env.MONGO_URL, {
+            serverSelectionTimeoutMS: 10000, // Timeout after 10s instead of hanging
+        });
+
+        console.log("✅ MongoDB Connected Successfully");
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error("❌ MongoDB Connection Failed:", message);
+        // DO NOT let the process crash; Render will keep trying to restart it
+        console.log("Retrying connection in 5 seconds...");
+        setTimeout(connectDB, 5000);
+    }
+};
+
+connectDB();
 
 
 const UserSchema = new Schema({

@@ -41,16 +41,8 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onFilterChange 
   const { nests, createNest, deleteNest, renameNest } = useNests();
   const { contents } = useContent();
 
-  const userString = localStorage.getItem("user");
-  let user = { username: "User" };
-  try {
-    if (userString) {
-      user = JSON.parse(userString);
-    }
-  } catch (e) {
-    console.error("Failed to parse user data", e);
-    localStorage.removeItem("user");
-  }
+  // User is stored as a plain string (username), not JSON
+  const username = localStorage.getItem("user") || "User";
 
   function logout() {
     localStorage.removeItem("token");
@@ -341,7 +333,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onFilterChange 
       {/* Footer / Profile */}
       <div className="p-3 border-t border-slate-800">
         <ProfileDropdown 
-          username={user.username || "User"} 
+          username={username} 
           onLogout={logout}
           isCollapsed={isCollapsed}
         />

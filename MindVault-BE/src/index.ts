@@ -310,8 +310,8 @@ app.put('/api/v1/content/:id', userMiddleware, async (req, res) => {
     }
 });
 
-app.get('/ping', (req, res) => {
-    res.send({ status: 'ok' });
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: Date.now() });
 });
 
 app.listen(3000, () => {

@@ -33,16 +33,8 @@ export default function MobileNav({ isOpen, onToggle, onFilterChange }: MobileNa
   const { nests, createNest } = useNests();
   const { contents } = useContent();
 
-  const userString = localStorage.getItem("user");
-  let user = { username: "User" };
-  try {
-    if (userString) {
-      user = JSON.parse(userString);
-    }
-  } catch (e) {
-    console.error("Failed to parse user data", e);
-    localStorage.removeItem("user");
-  }
+  // User is stored as a plain string (username), not JSON
+  const username = localStorage.getItem("user") || "User";
 
   function logout() {
     localStorage.removeItem("token");
@@ -219,7 +211,7 @@ export default function MobileNav({ isOpen, onToggle, onFilterChange }: MobileNa
             {/* Footer / Profile */}
             <div className="p-4 border-t border-slate-800">
               <div className="flex items-center gap-3">
-                <ProfileDropdown username={user.username || "User"} onLogout={logout} />
+                <ProfileDropdown username={username} onLogout={logout} />
               </div>
             </div>
           </motion.div>

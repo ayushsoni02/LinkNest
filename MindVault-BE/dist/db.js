@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -7,11 +16,26 @@ exports.linkModel = exports.ContentModel = exports.NestModel = exports.userModel
 const mongoose_1 = __importDefault(require("mongoose"));
 const Schema = mongoose_1.default.Schema;
 require('dotenv').config();
-const mongoUrl = process.env.MONGO_URL;
-if (!mongoUrl) {
-    throw new Error("MONGO_URL is not defined in the environment variables");
-}
-mongoose_1.default.connect(mongoUrl);
+const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Hide credentials in logs, but verify the variable exists
+        if (!process.env.MONGO_URL) {
+            throw new Error("MONGO_URL is missing from environment variables");
+        }
+        yield mongoose_1.default.connect(process.env.MONGO_URL, {
+            serverSelectionTimeoutMS: 10000, // Timeout after 10s instead of hanging
+        });
+        console.log("✅ MongoDB Connected Successfully");
+    }
+    catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error("❌ MongoDB Connection Failed:", message);
+        // DO NOT let the process crash; Render will keep trying to restart it
+        console.log("Retrying connection in 5 seconds...");
+        setTimeout(connectDB, 5000);
+    }
+});
+connectDB();
 const UserSchema = new Schema({
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },

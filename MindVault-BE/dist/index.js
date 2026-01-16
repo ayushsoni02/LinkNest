@@ -273,8 +273,8 @@ app.put('/api/v1/content/:id', middleware_1.userMiddleware, (req, res) => __awai
         res.status(500).json({ message: 'Failed to update content' });
     }
 }));
-app.get('/ping', (req, res) => {
-    res.send({ status: 'ok' });
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: Date.now() });
 });
 app.listen(3000, () => {
     console.log('Server is running on port 3000');
