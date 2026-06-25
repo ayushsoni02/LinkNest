@@ -16,6 +16,10 @@ const connectDB = async () => {
         });
 
         console.log("✅ MongoDB Connected Successfully");
+
+        // Temporary drop index for local development index synchronization
+        await mongoose.connection.collection('users').dropIndex("username_1").catch(() => {});
+        await mongoose.connection.collection('users').dropIndex("googleId_1").catch(() => {});
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         console.error("❌ MongoDB Connection Failed:", message);
@@ -29,11 +33,11 @@ connectDB();
 
 
 const UserSchema = new Schema({
-
-    username: { type: String, required: true, unique: true },
+    username: { type: String, required: true, unique: true, sparse: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, required: false },
     googleId: { type: String, unique: true, sparse: true },
+    avatarUrl: { type: String, required: false },
 });
 
 export const userModel = mongoose.model('users', UserSchema);

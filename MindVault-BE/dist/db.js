@@ -26,6 +26,9 @@ const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
             serverSelectionTimeoutMS: 10000, // Timeout after 10s instead of hanging
         });
         console.log("✅ MongoDB Connected Successfully");
+        // Temporary drop index for local development index synchronization
+        yield mongoose_1.default.connection.collection('users').dropIndex("username_1").catch(() => { });
+        yield mongoose_1.default.connection.collection('users').dropIndex("googleId_1").catch(() => { });
     }
     catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -37,10 +40,11 @@ const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 connectDB();
 const UserSchema = new Schema({
-    username: { type: String, required: true, unique: true },
+    username: { type: String, required: true, unique: true, sparse: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, required: false },
     googleId: { type: String, unique: true, sparse: true },
+    avatarUrl: { type: String, required: false },
 });
 exports.userModel = mongoose_1.default.model('users', UserSchema);
 const NestSchema = new Schema({
