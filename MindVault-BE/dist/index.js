@@ -61,31 +61,40 @@ app.post('/api/v1/extract', middleware_1.userMiddleware, (req, res) => __awaiter
 }));
 // Content CRUD Endpoints
 app.post('/api/v1/content', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const type = req.body.type;
-    const link = req.body.link;
-    const title = req.body.title;
-    const tags = req.body.tags || [];
-    const description = req.body.description;
-    const image = req.body.image;
-    const nestId = req.body.nestId || null;
-    // @ts-ignore
-    const userId = req.userId;
-    console.log("Creating content for user:", userId);
-    console.log("Payload:", { type, link, title, tags, nestId });
-    yield db_1.ContentModel.create({
-        link,
-        type,
-        title,
-        tags,
-        description,
-        image,
-        nestId,
-        //@ts-ignore
-        userId: req.userId,
-    });
-    res.json({
-        message: 'Content created successfully',
-    });
+    try {
+        const type = req.body.type;
+        const link = req.body.link;
+        // Sanitize string inputs (1000 for title, 5000 for description to prevent DB bloat/limits)
+        const title = (0, utils_1.sanitizeString)(req.body.title, 1000);
+        const tags = req.body.tags || [];
+        const description = (0, utils_1.sanitizeString)(req.body.description, 5000);
+        const image = req.body.image;
+        const nestId = req.body.nestId || null;
+        // @ts-ignore
+        const userId = req.userId;
+        console.log("Creating content for user:", userId);
+        console.log("Payload:", { type, link, title, tags, nestId });
+        yield db_1.ContentModel.create({
+            link,
+            type,
+            title,
+            tags,
+            description,
+            image,
+            nestId,
+            userId,
+        });
+        res.json({
+            message: 'Content created successfully',
+        });
+    }
+    catch (err) {
+        console.error('Save content error in DB transaction:', err);
+        res.status(500).json({
+            message: 'Failed to save content. It may contain invalid characters or exceed length limits.',
+            error: err.message
+        });
+    }
 }));
 app.get('/api/v1/content', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     // @ts-ignore

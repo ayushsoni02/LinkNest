@@ -9,3 +9,18 @@ export function random(len:number){
 
   return ans;
 }
+
+/**
+ * Sanitizes a string by removing invalid control characters (except common whitespace),
+ * null bytes, and potentially database-breaking invalid sequences.
+ * Truncates to max length if provided.
+ */
+export function sanitizeString(str: string | undefined | null, maxLength?: number): string {
+    if (!str) return '';
+    // Remove null bytes and non-printable control characters except newline, carriage return, and tab
+    let sanitized = str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
+    if (maxLength && sanitized.length > maxLength) {
+        sanitized = sanitized.substring(0, maxLength);
+    }
+    return sanitized;
+}

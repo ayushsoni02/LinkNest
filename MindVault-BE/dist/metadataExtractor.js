@@ -194,32 +194,33 @@ function extractMetadata(url) {
             extractionTime: 0
         };
         try {
-            // Special handling for YouTube - direct thumbnail extraction
+            // Special handling for YouTube - Use fast oEmbed API (<150ms)
             if (contentType === 'youtube') {
-                const ytThumbnail = getYouTubeThumbnail(url);
-                // Quick metadata fetch with aggressive timeout
-                const response = yield axios_1.default.get(url, {
-                    headers: STEALTH_HEADERS,
-                    timeout: 3000, // 3 second timeout
-                    maxRedirects: 3
-                });
-                const $ = cheerio.load(response.data);
-                return {
-                    title: $('meta[property="og:title"]').attr('content') ||
-                        $('title').text() ||
-                        'YouTube Video',
-                    description: $('meta[property="og:description"]').attr('content') ||
-                        $('meta[name="description"]').attr('content') ||
-                        'Watch this video on YouTube',
-                    image: ytThumbnail || $('meta[property="og:image"]').attr('content') || fallbackMetadata.image,
-                    siteName: 'YouTube',
-                    favicon,
-                    domain,
-                    contentType,
-                    platform: 'youtube',
-                    isRichMedia: true,
-                    extractionTime: Date.now() - startTime
-                };
+                try {
+                    // Fetch oEmbed JSON to bypass dynamic JS hydration
+                    const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+                    const response = yield axios_1.default.get(oembedUrl, {
+                        timeout: 2000,
+                    });
+                    const data = response.data;
+                    return {
+                        title: data.title || fallbackMetadata.title,
+                        description: data.author_name ? `Channel: ${data.author_name}` : fallbackMetadata.description,
+                        image: data.thumbnail_url || fallbackMetadata.image,
+                        siteName: data.provider_name || 'YouTube',
+                        favicon,
+                        domain,
+                        contentType,
+                        platform: 'youtube',
+                        isRichMedia: true,
+                        extractionTime: Date.now() - startTime
+                    };
+                }
+                catch (ytError) {
+                    console.warn('YouTube oEmbed failed, falling back to basic extraction:', ytError.message);
+                    // Fallback will happen naturally if an error is thrown
+                    throw ytError;
+                }
             }
             // For Twitter/X - use fallback immediately (they block scraping)
             if (contentType === 'twitter') {
