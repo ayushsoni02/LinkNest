@@ -2,8 +2,6 @@ import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import LinkCard, { LinkCardSkeleton } from '../components/LinkCard'
 import EmptyNestState from '../components/EmptyNestState'
-import CreateContentModel from '../components/CreateContentModel'
-import { Plusicon } from '../icons/PlusIcon'
 import Layout from '../components/Layout'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useContent, Content } from '../hooks/UseContent'
@@ -11,7 +9,6 @@ import AddLink from '../components/AddLink'
 import { Search, X } from 'lucide-react'
 
 function Dashboard() {
-  const [modelOpen, setModelOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -106,7 +103,6 @@ function Dashboard() {
     <Layout onFilterChange={setActiveFilter}>
       <div className='min-h-screen bg-slate-950 text-slate-200'>
         <div className='p-6 md:p-8 max-w-[1800px] mx-auto'>
-          <CreateContentModel open={modelOpen} onClose={() => setModelOpen(false)} />
           
           {/* Add Link - Simple URL input */}
           <AddLink onSuccess={refresh} />
@@ -156,17 +152,6 @@ function Dashboard() {
               </div>
             </motion.div>
 
-            <div className='flex items-center gap-3'>
-               <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setModelOpen(true)}
-                  className="px-5 py-3 bg-slate-800 border border-slate-700 text-slate-200 font-semibold rounded-xl hover:bg-slate-700 transition-all flex items-center gap-2"
-               >
-                  <Plusicon />
-                  Manual Add
-               </motion.button>
-            </div>
           </div>
 
           {/* Active Filter Chips */}
@@ -213,7 +198,12 @@ function Dashboard() {
             <EmptyNestState 
               hasFilters={searchQuery !== '' || activeFilter.type !== 'all'}
               onClearFilters={handleClearFilters}
-              onAddContent={() => setModelOpen(true)}
+              onAddContent={() => {
+                // Focus the top AddLink input bar
+                searchInputRef.current?.blur();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                // We could also add a ref to AddLink input if needed
+              }}
             />
           ) : (
             // Bento Grid Layout
