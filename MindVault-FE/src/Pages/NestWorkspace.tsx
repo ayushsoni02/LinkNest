@@ -10,7 +10,7 @@ import {
     Search
 } from "lucide-react";
 import Layout from "../components/Layout";
-import SmartLinkCard from "../components/SmartLinkCard";
+import LinkCard from "../components/LinkCard";
 import { useNests } from "../hooks/useNests";
 import { useContent } from "../hooks/UseContent";
 
@@ -89,21 +89,21 @@ export default function NestWorkspace() {
                     {viewMode === 'gallery' ? (
                         /* Gallery View */
                         <div className="h-full overflow-y-auto p-6 lg:p-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 max-w-7xl mx-auto auto-rows-auto">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto auto-rows-fr">
                                 {nestLinks.map((link, index) => (
-                                    <SmartLinkCard 
+                                    <LinkCard 
                                         key={link._id} 
                                         id={link._id}
                                         title={link.title}
                                         url={link.link}
-                                        type={link.type}
+                                        contentType={link.type}
                                         tags={link.tags}
                                         date={new Date(link.createdAt).toLocaleDateString('en-US', {
                                             month: 'short',
                                             day: 'numeric'
                                         })}
-                                        description={link.description}
-                                        thumbnailUrl={link.image}
+                                        description={link.description || (link as any).summary}
+                                        image={link.image}
                                         siteName={link.nestId?.name || undefined}
                                         favicon={`https://www.google.com/s2/favicons?domain=${new URL(link.link).hostname}&sz=64`}
                                         currentNestId={link.nestId?._id || null}

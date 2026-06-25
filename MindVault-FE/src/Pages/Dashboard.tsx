@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import BentoCard, { BentoCardSkeleton } from '../components/BentoCard'
+import LinkCard, { LinkCardSkeleton } from '../components/LinkCard'
 import EmptyNestState from '../components/EmptyNestState'
 import CreateContentModel from '../components/CreateContentModel'
 import { Plusicon } from '../icons/PlusIcon'
@@ -95,10 +95,7 @@ function Dashboard() {
 
   const filteredLinks = getFilteredLinks();
 
-  // Determine if content is rich media for Bento layout
-  const isRichMedia = (type: string) => {
-    return ['youtube', 'instagram', 'twitter'].includes(type);
-  };
+
 
   const handleClearFilters = () => {
     setSearchQuery("");
@@ -206,9 +203,9 @@ function Dashboard() {
           {/* Content Grid */}
           {isInitialLoad ? (
             // Loading skeleton grid
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 pt-4 auto-rows-fr">
               {[...Array(8)].map((_, i) => (
-                <BentoCardSkeleton key={i} isLarge={i < 2} />
+                <LinkCardSkeleton key={i} />
               ))}
             </div>
           ) : filteredLinks.length === 0 ? (
@@ -221,14 +218,12 @@ function Dashboard() {
           ) : (
             // Bento Grid Layout
             <motion.div 
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-auto"
+              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-fr"
               layout
             >
               {filteredLinks.map((link, index) => {
-                const richMedia = isRichMedia(link.type);
-                
                 return (
-                  <BentoCard
+                  <LinkCard
                     key={link._id}
                     id={link._id}
                     url={link.link}
@@ -239,7 +234,6 @@ function Dashboard() {
                     favicon={`https://www.google.com/s2/favicons?domain=${new URL(link.link).hostname}&sz=64`}
                     tags={link.tags}
                     contentType={link.type as any}
-                    isRichMedia={richMedia}
                     date={new Date(link.createdAt).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric'
