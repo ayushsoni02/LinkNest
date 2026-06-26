@@ -127,7 +127,7 @@ export default function LinkCard({
     const youtubeId = isYouTube ? extractYouTubeId(url) : null;
 
     const getThumbnail = () => {
-        if (image && !imageError) return image;
+        if (image && !imageError && !image.includes('placeholder.com')) return image;
         if (isYouTube && youtubeId) {
             return `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`;
         }
@@ -363,13 +363,22 @@ export default function LinkCard({
                                                 Open Original Link <ExternalLink size={16} />
                                             </a>
                                             {/* Media Preview */}
-                                            <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-slate-800 shadow-lg">
-                                                {isYouTube && youtubeId ? (
+                                            {isYouTube && youtubeId ? (
+                                                <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-slate-800 shadow-lg">
                                                     <YouTubeEmbed url={url} width="100%" height="100%" className="absolute top-0 left-0 w-full h-full border-0" />
-                                                ) : finalThumbnail ? (
-                                                    <img src={finalThumbnail} alt={title} className="absolute top-0 left-0 w-full h-full object-cover" />
-                                                ) : null}
-                                            </div>
+                                                </div>
+                                            ) : (
+                                                <div className="relative w-full h-48 rounded-xl overflow-hidden border border-slate-800 bg-slate-950 shadow-lg">
+                                                    {finalThumbnail ? (
+                                                        <img src={finalThumbnail} alt={title} className="w-full h-full object-cover rounded-xl border border-slate-800" />
+                                                    ) : (
+                                                        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-slate-950 flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-800">
+                                                            {getPlatformIcon(contentType)}
+                                                            <span className="text-slate-500 text-sm font-medium uppercase tracking-widest">{contentType}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
 
                                                 {/* 3. AI Insights & Summarization Engine */}
                                                 <div className="relative rounded-2xl border border-indigo-500/20 bg-slate-800/50 p-6 shadow-inner shadow-indigo-500/5 overflow-hidden">

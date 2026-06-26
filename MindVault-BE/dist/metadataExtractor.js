@@ -57,17 +57,13 @@ const STEALTH_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.9',
-    'Accept-Encoding': 'gzip, deflate, br',
     'Cache-Control': 'no-cache',
     'Pragma': 'no-cache',
-    'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-    'Sec-Ch-Ua-Mobile': '?0',
-    'Sec-Ch-Ua-Platform': '"Windows"',
     'Sec-Fetch-Dest': 'document',
     'Sec-Fetch-Mode': 'navigate',
     'Sec-Fetch-Site': 'none',
     'Sec-Fetch-User': '?1',
-    'Upgrade-Insecure-Requests': '1',
+    'Upgrade-Insecure-Requests': '1'
 };
 /**
  * Detect content type from URL
@@ -230,29 +226,40 @@ function extractMetadata(url) {
             if (contentType === 'instagram') {
                 return Object.assign(Object.assign({}, fallbackMetadata), { title: 'Instagram Post', description: 'View this post on Instagram', siteName: 'Instagram', extractionTime: Date.now() - startTime });
             }
-            // Standard scraping for other sites
-            const response = yield axios_1.default.get(url, {
+            // Standard scraping for other sites using fetch to bypass 403s
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const response = yield fetch(url, {
                 headers: STEALTH_HEADERS,
-                timeout: 3000, // 3 second timeout
-                maxRedirects: 3
+                signal: controller.signal
             });
-            const $ = cheerio.load(response.data);
-            // Extract Open Graph metadata
-            const ogTitle = $('meta[property="og:title"]').attr('content');
-            const ogDescription = $('meta[property="og:description"]').attr('content');
-            const ogImage = $('meta[property="og:image"]').attr('content');
-            const ogSiteName = $('meta[property="og:site_name"]').attr('content');
-            // Fallback to standard meta tags
-            const title = ogTitle ||
-                $('meta[name="title"]').attr('content') ||
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const html = yield response.text();
+            const $ = cheerio.load(html);
+            // Extract Open Graph and Twitter metadata with better fallbacks
+            const title = $('meta[property="og:title"]').attr('content') ||
+                $('meta[name="twitter:title"]').attr('content') ||
+                $('h1').first().text() ||
                 $('title').text().trim() ||
-                domain;
-            const description = ogDescription ||
-                $('meta[name="description"]').attr('content') ||
-                $('p').first().text().slice(0, 200) ||
-                `Content from ${domain}`;
+                'Untitled Article';
+            let description = $('meta[property="og:description"]').attr('content') ||
+                $('meta[name="twitter:description"]').attr('content') ||
+                '';
+            // Extract context body
+            const articleContent = $('article').text() || $('main').text() || $('p').slice(0, 5).text();
+            const sanitizedContext = articleContent.replace(/\s+/g, ' ').trim().slice(0, 2000);
+            if (sanitizedContext) {
+                description = sanitizedContext;
+            }
+            else if (!description) {
+                description = `Content from ${domain}`;
+            }
             // Handle relative image URLs
-            let image = ogImage || $('meta[name="twitter:image"]').attr('content');
+            let image = $('meta[property="og:image"]').attr('content') ||
+                $('meta[name="twitter:image"]').attr('content');
             if (image && !image.startsWith('http')) {
                 try {
                     const baseUrl = new URL(url);
@@ -266,7 +273,7 @@ function extractMetadata(url) {
                 title: title.slice(0, 200), // Limit title length
                 description: description.slice(0, 500), // Limit description
                 image: image || fallbackMetadata.image,
-                siteName: ogSiteName || domain,
+                siteName: $('meta[property="og:site_name"]').attr('content') || domain,
                 favicon,
                 domain,
                 contentType,
