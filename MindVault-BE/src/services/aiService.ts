@@ -30,6 +30,8 @@ export async function generateLinkDigest(contextString: string): Promise<DigestR
     try {
         const prompt = `Act as an advanced knowledge extraction engine. Analyze the provided webpage context. Return a strict JSON response containing two keys: 'summary' (a concise 3-4-sentence overview) and 'keyPoints' (an array of exactly 4-5 high-impact, actionable bullet points). Do not include raw markdown wrap codes or filler text.
         
+If the incoming context description mentions a long-form article title or a social graph platform post wrapper instead of full body text, utilize semantic analysis of the Title string to infer the overarching domain topic, generating high-level structured takeaways matching that engineering topic.
+
 Context to analyze:
 ${contextString}`;
 
