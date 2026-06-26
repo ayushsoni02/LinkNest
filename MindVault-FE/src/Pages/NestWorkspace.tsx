@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Layout from "../components/Layout";
 import LinkCard from "../components/LinkCard";
+import { ShareNestModal } from "../components/ShareNestModal";
 import { useNests } from "../hooks/useNests";
 import { useContent } from "../hooks/UseContent";
 
@@ -18,6 +19,7 @@ export default function NestWorkspace() {
     const { id } = useParams();
     const [viewMode, setViewMode] = useState<'gallery' | 'chat'>('gallery');
     const [input, setInput] = useState("");
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     
     const { nests } = useNests();
     const { contents } = useContent();
@@ -76,7 +78,10 @@ export default function NestWorkspace() {
                              </button>
                          </div>
 
-                         <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm shadow-indigo-500/20">
+                         <button 
+                             onClick={() => setIsShareModalOpen(true)}
+                             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm shadow-indigo-500/20"
+                         >
                              <Share2 size={16} />
                              Share Nest
                          </button>
@@ -199,6 +204,21 @@ export default function NestWorkspace() {
                     )}
                 </main>
             </div>
+            
+            {nest && (
+                <ShareNestModal 
+                    isOpen={isShareModalOpen}
+                    onClose={() => setIsShareModalOpen(false)}
+                    nestId={nest._id}
+                    nestName={nest.name}
+                    initialIsPublic={nest.isPublic || false}
+                    shareToken={nest.shareToken}
+                    onUpdate={(isPublic, shareToken) => {
+                        nest.isPublic = isPublic;
+                        nest.shareToken = shareToken;
+                    }}
+                />
+            )}
         </Layout>
     );
 }

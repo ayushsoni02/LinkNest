@@ -42,11 +42,22 @@ const UserSchema = new Schema({
 
 export const userModel = mongoose.model('users', UserSchema);
 
+import crypto from "crypto";
+
 const NestSchema = new Schema({
     name: { type: String, required: true },
     description: String,
     userId: { type: mongoose.Types.ObjectId, ref: 'users', required: true },
+    isPublic: { type: Boolean, default: false },
+    shareToken: { type: String, unique: true, sparse: true },
     createdAt: { type: Date, default: Date.now }
+});
+
+NestSchema.pre('save', function (next) {
+    if (!this.shareToken) {
+        this.shareToken = crypto.randomBytes(8).toString('hex');
+    }
+    next();
 });
 
 export const NestModel = mongoose.model('nests', NestSchema);

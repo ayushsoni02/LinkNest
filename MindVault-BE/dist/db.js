@@ -47,11 +47,20 @@ const UserSchema = new Schema({
     avatarUrl: { type: String, required: false },
 });
 exports.userModel = mongoose_1.default.model('users', UserSchema);
+const crypto_1 = __importDefault(require("crypto"));
 const NestSchema = new Schema({
     name: { type: String, required: true },
     description: String,
     userId: { type: mongoose_1.default.Types.ObjectId, ref: 'users', required: true },
+    isPublic: { type: Boolean, default: false },
+    shareToken: { type: String, unique: true, sparse: true },
     createdAt: { type: Date, default: Date.now }
+});
+NestSchema.pre('save', function (next) {
+    if (!this.shareToken) {
+        this.shareToken = crypto_1.default.randomBytes(8).toString('hex');
+    }
+    next();
 });
 exports.NestModel = mongoose_1.default.model('nests', NestSchema);
 const ContentSchema = new Schema({

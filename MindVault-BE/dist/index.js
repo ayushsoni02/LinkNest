@@ -212,7 +212,102 @@ app.delete('/api/v1/content/:id', middleware_1.userMiddleware, (req, res) => __a
         res.status(500).json({ message: 'Failed to delete content' });
     }
 }));
+// Public Nest Fetch Endpoint
+app.get('/api/v1/public/nests/:shareToken', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { shareToken } = req.params;
+        // 1. Fetch the target nest using the token slug
+        const nest = yield db_1.NestModel.findOne({ shareToken });
+        if (!nest) {
+            return res.status(404).json({ message: "Shared workspace collection not found." });
+        }
+        // 2. Strict Security Boundary Check
+        if (!nest.isPublic) {
+            return res.status(403).json({ message: "This workspace has been set to private by the owner." });
+        }
+        // 3. Extract all content items mapped to this specific Nest ID
+        const contents = yield db_1.ContentModel.find({ nestId: nest._id })
+            .select('-embedding') // Strip heavy high-dimensional vector arrays to optimize payload velocity
+            .lean();
+        // 4. Return stripped response optimized for public read-only views
+        return res.status(200).json({
+            nest: {
+                name: nest.name,
+                isPublic: nest.isPublic,
+                shareToken: nest.shareToken
+            },
+            contents
+        });
+    }
+    catch (error) {
+        console.error("Public Nest Extraction Failure:", error.message);
+        return res.status(500).json({ message: "Internal server processing drop encountered." });
+    }
+}));
 // Nest CRUD endpoints
+app.post('/api/v1/nests/duplicate', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { shareToken } = req.body;
+        const activeUserId = req.userId;
+        // 1. Fetch source public nest context
+        const sourceNest = yield db_1.NestModel.findOne({ shareToken, isPublic: true });
+        if (!sourceNest) {
+            return res.status(404).json({ message: "Source shared collection is private or missing." });
+        }
+        // 2. Generate a fresh duplicate Nest container mapped to the active user
+        const clonedNest = yield db_1.NestModel.create({
+            name: `${sourceNest.name} (Cloned)`,
+            userId: activeUserId,
+            isPublic: false, // Default to private for the duplicating user
+        });
+        // 3. Query all content assets attached to the source Nest
+        const sourceContents = yield db_1.ContentModel.find({ nestId: sourceNest._id });
+        if (sourceContents.length > 0) {
+            // 4. Map assets to the new user context, preserving titles, descriptions, and vector embeddings
+            const duplicatedPayloads = sourceContents.map(item => ({
+                userId: activeUserId,
+                nestId: clonedNest._id,
+                type: item.type,
+                link: item.link,
+                title: item.title,
+                description: item.description,
+                aiSummary: item.aiSummary,
+                aiKeyPoints: item.aiKeyPoints,
+                embedding: item.embedding || [], // Maintain embeddings so RAG works instantly out-of-the-box
+                tags: item.tags,
+                image: item.image
+            }));
+            yield db_1.ContentModel.insertMany(duplicatedPayloads);
+        }
+        return res.status(201).json({
+            message: "Nest cloned successfully to your MindVault!",
+            newNestId: clonedNest._id
+        });
+    }
+    catch (error) {
+        console.error("Duplication Loop Failure:", error.message);
+        return res.status(500).json({ message: "Cloning transaction broken." });
+    }
+}));
+app.patch('/api/v1/nests/:id/toggle-public', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const nestId = req.params.id;
+        const userId = req.userId;
+        const { isPublic } = req.body;
+        const nest = yield db_1.NestModel.findOneAndUpdate({ _id: nestId, userId }, { isPublic }, { new: true });
+        if (!nest) {
+            return res.status(404).json({ message: "Nest not found or unauthorized." });
+        }
+        return res.status(200).json({
+            message: `Nest is now ${nest.isPublic ? 'public' : 'private'}`,
+            nest
+        });
+    }
+    catch (error) {
+        console.error("Toggle Public Failure:", error.message);
+        return res.status(500).json({ message: "Failed to toggle public state." });
+    }
+}));
 app.post('/api/v1/nests', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { name, description } = req.body;
