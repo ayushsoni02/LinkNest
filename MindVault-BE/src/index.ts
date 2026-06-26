@@ -8,6 +8,7 @@ import { JWT_PASSWORD } from './conf';
 dotenv.config();
 import { userMiddleware } from './middleware';
 import { random, sanitizeString } from './utils';
+import { generateLinkDigest } from './services/aiService';
 import authRoutes from "./auth";
 import cors from "cors";
 
@@ -74,6 +75,15 @@ app.post('/api/v1/content', userMiddleware, async (req, res) => {
         console.log("Creating content for user:", userId);
         console.log("Payload:", { type, link, title, tags, nestId });
 
+        // AI Summarization Pipeline
+        const contextString = type === 'youtube' 
+            ? `Video Title: ${title}\nDescription: ${description}`
+            : (description || title);
+            
+        console.log("Generating AI Digest...");
+        const aiDigest = await generateLinkDigest(contextString);
+        console.log("AI Digest Complete.");
+
         await ContentModel.create({
             link,
             type,
@@ -83,10 +93,14 @@ app.post('/api/v1/content', userMiddleware, async (req, res) => {
             image,
             nestId,
             userId,
+            aiSummary: aiDigest.summary,
+            aiKeyPoints: aiDigest.keyPoints
         });
 
         res.json({
             message: 'Content created successfully',
+            aiSummary: aiDigest.summary,
+            aiKeyPoints: aiDigest.keyPoints
         });
     } catch (err: any) {
         console.error('Save content error in DB transaction:', err);

@@ -62,6 +62,8 @@ const ContentSchema = new Schema({
     summary: String,
     description: { type: String, required: false },
     image: { type: String, required: false },
+    aiSummary: { type: String, required: false },
+    aiKeyPoints: { type: [String], required: false },
     aiMetadata: {
         model: String,
         tokensUsed: Number,

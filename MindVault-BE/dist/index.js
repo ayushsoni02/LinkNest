@@ -18,6 +18,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const middleware_1 = require("./middleware");
 const utils_1 = require("./utils");
+const aiService_1 = require("./services/aiService");
 const auth_1 = __importDefault(require("./auth"));
 const cors_1 = __importDefault(require("cors"));
 const passport_1 = __importDefault(require("passport"));
@@ -74,6 +75,13 @@ app.post('/api/v1/content', middleware_1.userMiddleware, (req, res) => __awaiter
         const userId = req.userId;
         console.log("Creating content for user:", userId);
         console.log("Payload:", { type, link, title, tags, nestId });
+        // AI Summarization Pipeline
+        const contextString = type === 'youtube'
+            ? `Video Title: ${title}\nDescription: ${description}`
+            : (description || title);
+        console.log("Generating AI Digest...");
+        const aiDigest = yield (0, aiService_1.generateLinkDigest)(contextString);
+        console.log("AI Digest Complete.");
         yield db_1.ContentModel.create({
             link,
             type,
@@ -83,9 +91,13 @@ app.post('/api/v1/content', middleware_1.userMiddleware, (req, res) => __awaiter
             image,
             nestId,
             userId,
+            aiSummary: aiDigest.summary,
+            aiKeyPoints: aiDigest.keyPoints
         });
         res.json({
             message: 'Content created successfully',
+            aiSummary: aiDigest.summary,
+            aiKeyPoints: aiDigest.keyPoints
         });
     }
     catch (err) {
