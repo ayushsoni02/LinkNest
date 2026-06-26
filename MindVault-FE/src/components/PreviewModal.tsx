@@ -20,7 +20,7 @@ interface PreviewModalProps {
     onClose: () => void;
     metadata: ExtractedMetadata | null;
     url: string;
-    onSave: (data: { title: string; tags: string[]; nestId: string | null }) => Promise<void>;
+    onSave: (data: { title: string; description: string; tags: string[]; nestId: string | null }) => Promise<void>;
     isSaving?: boolean;
 }
 
@@ -34,6 +34,7 @@ export default function PreviewModal({
 }: PreviewModalProps) {
     // Editable fields
     const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
     const [tagInput, setTagInput] = useState('');
     const [tags, setTags] = useState<string[]>([]);
     const [selectedNestId, setSelectedNestId] = useState<string | null>(null);
@@ -43,6 +44,9 @@ export default function PreviewModal({
     // Update state when metadata changes
     if (metadata && title !== metadata.title && title === '') {
         setTitle(metadata.title);
+    }
+    if (metadata && description !== metadata.description && description === '') {
+        setDescription(metadata.description);
     }
 
     const handleAddTag = () => {
@@ -66,11 +70,13 @@ export default function PreviewModal({
     const handleSave = async () => {
         await onSave({
             title: title || metadata?.title || url,
+            description: description || metadata?.description || '',
             tags,
             nestId: selectedNestId
         });
         // Reset state
         setTitle('');
+        setDescription('');
         setTags([]);
         setTagInput('');
         setSelectedNestId(null);
@@ -78,6 +84,7 @@ export default function PreviewModal({
 
     const handleClose = () => {
         setTitle('');
+        setDescription('');
         setTags([]);
         setTagInput('');
         setSelectedNestId(null);
@@ -287,6 +294,20 @@ export default function PreviewModal({
                                             onChange={(e) => setTitle(e.target.value)}
                                             placeholder="Enter a title..."
                                             className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50"
+                                        />
+                                    </div>
+
+                                    {/* Description Field */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-400 mb-2">
+                                            Description
+                                        </label>
+                                        <textarea
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                            placeholder="Enter a description..."
+                                            rows={3}
+                                            className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 resize-none"
                                         />
                                     </div>
 

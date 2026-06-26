@@ -228,6 +228,8 @@ function Dashboard() {
                       month: 'short',
                       day: 'numeric'
                     })}
+                    aiSummary={link.aiSummary}
+                    aiKeyPoints={link.aiKeyPoints}
                     currentNestId={link.nestId?._id || null}
                     onDelete={handleDelete}
                     onRefresh={refresh}

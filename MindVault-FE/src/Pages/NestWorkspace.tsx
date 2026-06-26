@@ -102,6 +102,8 @@ export default function NestWorkspace() {
                                             month: 'short',
                                             day: 'numeric'
                                         })}
+                                        aiSummary={link.aiSummary}
+                                        aiKeyPoints={link.aiKeyPoints}
                                         description={link.description || (link as any).summary}
                                         image={link.image}
                                         siteName={link.nestId?.name || undefined}

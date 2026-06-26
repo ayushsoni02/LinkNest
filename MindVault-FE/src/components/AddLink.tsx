@@ -57,7 +57,7 @@ const AddLink = ({ onSuccess }: AddLinkProps) => {
     }
   };
 
-  const handleSave = async (data: { title: string; tags: string[]; nestId: string | null }) => {
+  const handleSave = async (data: { title: string; description: string; tags: string[]; nestId: string | null }) => {
     if (!metadata) return;
 
     setIsSaving(true);
@@ -68,7 +68,7 @@ const AddLink = ({ onSuccess }: AddLinkProps) => {
         title: data.title,
         type: metadata.contentType,
         tags: data.tags,
-        description: metadata.description,
+        description: data.description,
         image: metadata.image,
         nestId: data.nestId
       });

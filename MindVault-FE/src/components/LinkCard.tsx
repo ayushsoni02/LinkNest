@@ -31,6 +31,8 @@ export interface LinkCardProps {
     tags?: string[];
     contentType: 'youtube' | 'twitter' | 'github' | 'instagram' | 'article' | 'medium' | 'substack' | 'other' | string;
     date?: string;
+    aiSummary?: string;
+    aiKeyPoints?: string[];
     currentNestId?: string | null;
     onDelete?: (id: string) => void;
     onRefresh?: () => void;
@@ -106,6 +108,8 @@ export default function LinkCard({
     tags = [],
     contentType,
     date,
+    aiSummary,
+    aiKeyPoints,
     currentNestId,
     onDelete,
     onRefresh,
@@ -327,49 +331,48 @@ export default function LinkCard({
                         <div className="absolute inset-0 overflow-hidden">
                             <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
                                 <Transition.Child as={Fragment} enter="transform transition ease-in-out duration-300 sm:duration-500" enterFrom="translate-x-full" enterTo="translate-x-0" leave="transform transition ease-in-out duration-300 sm:duration-500" leaveFrom="translate-x-0" leaveTo="translate-x-full">
-                                    <Dialog.Panel className="pointer-events-auto w-screen max-w-lg">
-                                        <div className="flex h-full flex-col bg-slate-950 shadow-2xl border-l border-slate-800/60 overflow-y-auto">
+                                    <Dialog.Panel className="pointer-events-auto fixed inset-y-0 right-0 z-50 w-full max-w-md bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col">
                                             
-                                            {/* 1. Header Zone */}
-                                            <div className="flex flex-col gap-4 p-6 border-b border-slate-800/60 bg-slate-900/30 sticky top-0 z-10 backdrop-blur-xl">
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide rounded-md border ${getTypeBadgeStyle(contentType)}`}>
-                                                            {contentType}
-                                                        </span>
-                                                        <span className="text-xs font-medium text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                                                            {favicon && <img src={favicon} alt="" className="w-4 h-4 rounded" />}
-                                                            {siteName || getDomain()}
-                                                        </span>
-                                                    </div>
-                                                    <button type="button" className="rounded-full bg-slate-800 p-2 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors" onClick={() => setIsPanelOpen(false)}>
-                                                        <X size={18} />
-                                                    </button>
+                                        {/* 1. Header Layer (Fixed, Non-Scrolling) */}
+                                        <div className="flex flex-col gap-4 p-6 border-b border-slate-800 bg-slate-900 shrink-0">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide rounded-md border ${getTypeBadgeStyle(contentType)}`}>
+                                                        {contentType}
+                                                    </span>
+                                                    <span className="text-xs font-medium text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                                        {favicon && <img src={favicon} alt="" className="w-4 h-4 rounded" />}
+                                                        {siteName || getDomain()}
+                                                    </span>
                                                 </div>
-                                                
-                                                <Dialog.Title className="text-xl font-bold text-white leading-snug">
-                                                    {title}
-                                                </Dialog.Title>
+                                                <button type="button" className="rounded-full bg-slate-800 p-2 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors" onClick={() => setIsPanelOpen(false)}>
+                                                    <X size={18} />
+                                                </button>
+                                            </div>
+                                            
+                                            <Dialog.Title className="text-xl font-bold text-white leading-snug m-0 p-0">
+                                                {title}
+                                            </Dialog.Title>
+                                        </div>
 
-                                                <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.98]">
-                                                    Open Original Link <ExternalLink size={16} />
-                                                </a>
+                                        {/* 2. Content Body Layer (Scrollable Zone) */}
+                                        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                                            
+                                            {/* Primary Action Button */}
+                                            <a href={url} target="_blank" rel="noreferrer" className="w-full py-3 mb-2 font-medium text-center text-white bg-indigo-600 rounded-xl hover:bg-indigo-500 transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
+                                                Open Original Link <ExternalLink size={16} />
+                                            </a>
+                                            {/* Media Preview */}
+                                            <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-slate-800 shadow-lg">
+                                                {isYouTube && youtubeId ? (
+                                                    <YouTubeEmbed url={url} width="100%" height="100%" className="absolute top-0 left-0 w-full h-full border-0" />
+                                                ) : finalThumbnail ? (
+                                                    <img src={finalThumbnail} alt={title} className="absolute top-0 left-0 w-full h-full object-cover" />
+                                                ) : null}
                                             </div>
 
-                                            <div className="p-6 flex flex-col gap-8">
-                                                {/* 2. Media Preview */}
-                                                <div className="rounded-2xl overflow-hidden border border-slate-800/80 bg-black shadow-xl">
-                                                    {isYouTube && youtubeId ? (
-                                                        <div className="aspect-video">
-                                                            <YouTubeEmbed url={url} width="100%" height="100%" />
-                                                        </div>
-                                                    ) : finalThumbnail ? (
-                                                        <img src={finalThumbnail} alt={title} className="w-full h-auto" />
-                                                    ) : null}
-                                                </div>
-
                                                 {/* 3. AI Insights & Summarization Engine */}
-                                                <div className="relative rounded-2xl border border-indigo-500/20 bg-slate-900/50 p-6 shadow-inner shadow-indigo-500/5 overflow-hidden">
+                                                <div className="relative rounded-2xl border border-indigo-500/20 bg-slate-800/50 p-6 shadow-inner shadow-indigo-500/5 overflow-hidden">
                                                     {/* Background glow */}
                                                     <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
                                                     
@@ -378,37 +381,42 @@ export default function LinkCard({
                                                         <h4 className="text-base font-bold text-indigo-300">AI Smart Digest</h4>
                                                     </div>
                                                     
-                                                    {description ? (
+                                                    {aiSummary || (aiKeyPoints && aiKeyPoints.length > 0) ? (
                                                         <div className="prose prose-invert prose-sm max-w-none text-slate-300 leading-relaxed">
-                                                            {/* Render description. In real scenario, might be markdown or bullet points. */}
-                                                            {description.split('\n').map((para, i) => (
-                                                                <p key={i} className="mb-2 last:mb-0 relative pl-4">
-                                                                    <span className="absolute left-0 top-2 w-1.5 h-1.5 rounded-full bg-indigo-500/50" />
-                                                                    {para}
-                                                                </p>
-                                                            ))}
+                                                            {aiSummary && (
+                                                                <p className="mb-4 text-slate-300">{aiSummary}</p>
+                                                            )}
+                                                            
+                                                            {aiKeyPoints && aiKeyPoints.length > 0 && (
+                                                                <ul className="list-disc pl-5 space-y-2">
+                                                                    {aiKeyPoints.map((point, i) => (
+                                                                        <li key={i} className="text-slate-300">
+                                                                            {point}
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            )}
                                                         </div>
                                                     ) : (
                                                         <div className="animate-pulse space-y-3">
-                                                            <div className="h-4 bg-slate-800 rounded w-3/4"></div>
-                                                            <div className="h-4 bg-slate-800 rounded w-full"></div>
-                                                            <div className="h-4 bg-slate-800 rounded w-5/6"></div>
-                                                        </div>
-                                                    )}
-                                                    
-                                                    {tags.length > 0 && (
-                                                        <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-slate-800/50">
-                                                            {tags.map((tag, i) => (
-                                                                <span key={i} className="px-3 py-1 bg-slate-800/80 text-slate-300 text-xs font-medium rounded-lg border border-slate-700/50">
-                                                                    #{tag}
-                                                                </span>
-                                                            ))}
+                                                            <div className="h-4 bg-slate-700 rounded w-3/4"></div>
+                                                            <div className="h-4 bg-slate-700 rounded w-full"></div>
+                                                            <div className="h-4 bg-slate-700 rounded w-5/6"></div>
                                                         </div>
                                                     )}
                                                 </div>
+                                                
+                                                {/* Tags */}
+                                                {tags.length > 0 && (
+                                                    <div className="flex flex-wrap gap-2 pt-2">
+                                                        {tags.map((tag, i) => (
+                                                            <span key={i} className="px-3 py-1 bg-slate-800/80 text-slate-300 text-xs font-medium rounded-lg border border-slate-700/50">
+                                                                #{tag}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
-                                            
-                                        </div>
                                     </Dialog.Panel>
                                 </Transition.Child>
                             </div>
