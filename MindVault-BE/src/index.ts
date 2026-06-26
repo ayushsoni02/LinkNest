@@ -8,7 +8,7 @@ import { JWT_PASSWORD } from './conf';
 dotenv.config();
 import { userMiddleware } from './middleware';
 import { random, sanitizeString } from './utils';
-import { generateLinkDigest } from './services/aiService';
+import { generateLinkDigest, generateTextEmbedding } from './services/aiService';
 import authRoutes from "./auth";
 import cors from "cors";
 
@@ -84,6 +84,11 @@ app.post('/api/v1/content', userMiddleware, async (req, res) => {
         const aiDigest = await generateLinkDigest(contextString);
         console.log("AI Digest Complete.");
 
+        console.log("Generating Vector Embeddings...");
+        const textContext = `${title} ${description} ${aiDigest.summary}`.substring(0, 2000);
+        const vectorArray = await generateTextEmbedding(textContext);
+        console.log("Vector Embeddings Generated.");
+
         await ContentModel.create({
             link,
             type,
@@ -94,7 +99,8 @@ app.post('/api/v1/content', userMiddleware, async (req, res) => {
             nestId,
             userId,
             aiSummary: aiDigest.summary,
-            aiKeyPoints: aiDigest.keyPoints
+            aiKeyPoints: aiDigest.keyPoints,
+            embedding: vectorArray
         });
 
         res.json({

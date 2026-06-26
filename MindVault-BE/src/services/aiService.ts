@@ -61,3 +61,24 @@ ${contextString}`;
         return fallbackResponse;
     }
 }
+
+/**
+ * Generates an embedding vector array for the provided text.
+ */
+export const generateTextEmbedding = async (textToEmbed: string): Promise<number[]> => {
+    try {
+        // Fallback block if input context is missing or thin
+        const safeText = textToEmbed || "Empty link content overview";
+
+        const response = await genai.models.embedContent({
+            model: 'text-embedding-004',
+            contents: safeText,
+        });
+
+        // Extract the float array matrix from the Gemini SDK payload structure
+        return response.embeddings?.[0]?.values || [];
+    } catch (error) {
+        console.error("Gemini Vector Generation Engine Failed:", error);
+        return []; // Return clean empty array boundary on network dropouts
+    }
+};

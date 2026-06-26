@@ -82,6 +82,10 @@ app.post('/api/v1/content', middleware_1.userMiddleware, (req, res) => __awaiter
         console.log("Generating AI Digest...");
         const aiDigest = yield (0, aiService_1.generateLinkDigest)(contextString);
         console.log("AI Digest Complete.");
+        console.log("Generating Vector Embeddings...");
+        const textContext = `${title} ${description} ${aiDigest.summary}`.substring(0, 2000);
+        const vectorArray = yield (0, aiService_1.generateTextEmbedding)(textContext);
+        console.log("Vector Embeddings Generated.");
         yield db_1.ContentModel.create({
             link,
             type,
@@ -92,7 +96,8 @@ app.post('/api/v1/content', middleware_1.userMiddleware, (req, res) => __awaiter
             nestId,
             userId,
             aiSummary: aiDigest.summary,
-            aiKeyPoints: aiDigest.keyPoints
+            aiKeyPoints: aiDigest.keyPoints,
+            embedding: vectorArray
         });
         res.json({
             message: 'Content created successfully',

@@ -12,6 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.generateTextEmbedding = void 0;
 exports.generateLinkDigest = generateLinkDigest;
 const genai_1 = require("@google/genai");
 const dotenv_1 = __importDefault(require("dotenv"));
@@ -67,3 +68,24 @@ ${contextString}`;
         }
     });
 }
+/**
+ * Generates an embedding vector array for the provided text.
+ */
+const generateTextEmbedding = (textToEmbed) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
+    try {
+        // Fallback block if input context is missing or thin
+        const safeText = textToEmbed || "Empty link content overview";
+        const response = yield genai.models.embedContent({
+            model: 'text-embedding-004',
+            contents: safeText,
+        });
+        // Extract the float array matrix from the Gemini SDK payload structure
+        return ((_b = (_a = response.embeddings) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.values) || [];
+    }
+    catch (error) {
+        console.error("Gemini Vector Generation Engine Failed:", error);
+        return []; // Return clean empty array boundary on network dropouts
+    }
+});
+exports.generateTextEmbedding = generateTextEmbedding;
