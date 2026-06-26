@@ -205,7 +205,7 @@ function extractMetadata(url) {
                     const data = response.data;
                     return {
                         title: data.title || fallbackMetadata.title,
-                        description: data.author_name ? `Channel: ${data.author_name}` : fallbackMetadata.description,
+                        description: data.author_name ? `A video content item created by ${data.author_name}` : fallbackMetadata.description,
                         image: data.thumbnail_url || fallbackMetadata.image,
                         siteName: data.provider_name || 'YouTube',
                         favicon,
