@@ -503,9 +503,7 @@ app.post('/api/v1/nests/:nestId/chat', userMiddleware, async (req: any, res: any
             .join('\n\n---\n\n');
 
         // 6. Invoke gemini-2.5-flash with deep structural system grounding instructions
-        const response = await genai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: `You are an elite, institutional-grade technical AI tutor assisting a software engineer preparing for competitive system design and core CS interviews.
+        const ragSystemPrompt = `You are an elite, institutional-grade technical AI tutor assisting a software engineer preparing for competitive system design and core CS interviews.
       Analyze the user's interview question by relying strictly on the following highly relevant reference insights extracted from their saved items inside this workspace Nest container.
 
       ---
@@ -520,11 +518,41 @@ app.post('/api/v1/nests/:nestId/chat', userMiddleware, async (req: any, res: any
       - Answer the question directly using professional, structured bullet points, clear hierarchy, and line breaks.
       - Base your primary architectural logic on the provided workspace context insights.
       - If the answer cannot be confidently inferred from the reference context, leverage your extensive system design expertise to deliver an advanced textbook-level response, but explicitly append a subtle note at the very end stating: '[Grounded baseline extensions applied; asset context was thin].'
-      - Do not make up fake details or references that don't exist.`
-        });
+      - Do not make up fake details or references that don't exist.`;
+
+        // --- Phase 5: Hit the generation cascade with high-availability retry ---
+        console.log("🧠 Transmitting contextual payload matrix to Gemini generation cascade...");
+        
+        const chatModelCascade = ['gemini-2.5-flash', 'gemini-1.5-flash']; // Alternate stable endpoints
+        let finalResponseText = "";
+
+        for (const modelName of chatModelCascade) {
+            try {
+                console.log(`🚀 Attempting RAG Response Synthesis via: [${modelName}]...`);
+                const modelResponse = await genai.models.generateContent({
+                    model: modelName,
+                    contents: ragSystemPrompt
+                });
+
+                if (modelResponse && modelResponse.text) {
+                    finalResponseText = modelResponse.text;
+                    console.log(`✅ Success: RAG compilation completed using [${modelName}]!`);
+                    break; // Break the cascade once we get a valid stream
+                }
+            } catch (cascadeError: any) {
+                console.warn(`⚠️ Warning: Chat generation failed on [${modelName}]: ${cascadeError.message}`);
+                if (modelName === chatModelCascade[chatModelCascade.length - 1]) {
+                    throw new Error("All upstream text generation models are currently overloaded.");
+                }
+                // Continue loop to fallback seamlessly
+                continue;
+            }
+        }
 
         return res.status(200).json({
-            answer: response.text || "Direct answer processing pipeline encountered an internal inference delay."
+            response: finalResponseText || "Context translation processed into temporary queue layout.",
+            answer: finalResponseText || "Context translation processed into temporary queue layout.",
+            sources: highlyRelevantDocs.map(d => ({ title: d.title, link: d.link }))
         });
 
     } catch (error: any) {
