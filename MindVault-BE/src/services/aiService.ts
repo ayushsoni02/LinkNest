@@ -87,51 +87,28 @@ ${contextString}`;
  * Generates an embedding vector array for the provided text.
  */
 export const generateTextEmbedding = async (textToEmbed: string): Promise<number[]> => {
-    try {
-        const safeText = textToEmbed && textToEmbed.trim().length > 0 
-            ? textToEmbed 
-            : "Empty link repository payload metadata overview";
+  try {
+    const safeText = textToEmbed && textToEmbed.trim().length > 0 
+      ? textToEmbed 
+      : "Empty link repository payload metadata overview";
 
-        // Grab your existing API key from environment variables safely
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-            throw new Error("Missing GEMINI_API_KEY inside environment setup.");
-        }
+    // Call the newly supported production model natively via the SDK instance
+    const response = await genai.models.embedContent({
+      model: 'models/gemini-embedding-001', // Using the upgraded official active 2026 standard
+      contents: safeText,
+    });
 
-        // Hit Google's stable v1 production API endpoint directly
-        const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`;
-
-        const response = await fetch(targetUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: "models/text-embedding-004",
-                content: {
-                    parts: [{ text: safeText }]
-                }
-            })
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(`Google API Gateway responded with status: ${response.status} - ${JSON.stringify(errorData)}`);
-        }
-
-        const data = await response.json();
-
-        // Isolate the clean float array values directly from the official REST payload tree
-        if (data && data.embedding && data.embedding.values) {
-            console.log(`✅ Success: Vector dimensions generated matrix count: ${data.embedding.values.length}`);
-            return data.embedding.values; // Returns the full 768-dimension array
-        }
-
-        throw new Error("Malformed JSON schema structure returned from Google REST service.");
-
-    } catch (error: any) {
-        console.error("❌ Gemini Native Rest Gateway Failed:", error.message);
-        // Safe boundary: Initialize a clean 768-float baseline zero vector so mongoose inserts execute smoothly
-        return new Array(768).fill(0);
+    if (response && response.embeddings && response.embeddings[0] && response.embeddings[0].values) {
+      console.log(`✅ Success: Generated active vector dimensions array size: ${response.embeddings[0].values.length}`);
+      return response.embeddings[0].values; // Returns the clean 768-dimension mathematical float matrix
     }
+
+    throw new Error("Invalid matrix response layout from Gemini SDK.");
+
+  } catch (error: any) {
+    console.error("❌ Gemini SDK Native Embedding Failed:", error.message);
+    
+    // Safety Net: Return an initialized 768-dimension zero array so MongoDB writes don't crash
+    return new Array(768).fill(0);
+  }
 };
