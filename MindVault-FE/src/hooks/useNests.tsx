@@ -8,6 +8,8 @@ export interface Nest {
   description?: string;
   userId: string;
   createdAt: string;
+  isPublic?: boolean;
+  shareToken?: string;
 }
 
 export function useNests() {

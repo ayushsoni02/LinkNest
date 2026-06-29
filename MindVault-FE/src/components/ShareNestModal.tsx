@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { X, Copy, Check, Globe, Lock } from 'lucide-react';
+import { useState } from 'react';
+import { X, Globe, Lock } from 'lucide-react';
 import axios from 'axios';
-import { BACKEND_URL } from '../config';
+import { BACKEND_URL } from '../Config';
 
 interface ShareNestModalProps {
     isOpen: boolean;
