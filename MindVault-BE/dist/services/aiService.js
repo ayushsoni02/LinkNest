@@ -12,12 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateTextEmbedding = void 0;
+exports.generateTextEmbedding = exports.genai = void 0;
 exports.generateLinkDigest = generateLinkDigest;
 const genai_1 = require("@google/genai");
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-const genai = new genai_1.GoogleGenAI({
+exports.genai = new genai_1.GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY || ''
 });
 /**
@@ -45,7 +45,7 @@ ${contextString}`;
         for (const modelName of modelCascade) {
             try {
                 console.log(`🚀 Attempting AI Digest Generation via target channel: [${modelName}]...`);
-                const response = yield genai.models.generateContent({
+                const response = yield exports.genai.models.generateContent({
                     model: modelName,
                     contents: prompt,
                     config: {
@@ -94,7 +94,7 @@ const generateTextEmbedding = (textToEmbed) => __awaiter(void 0, void 0, void 0,
             ? textToEmbed
             : "Empty link repository payload metadata overview";
         // Call the newly supported production model natively via the SDK instance
-        const response = yield genai.models.embedContent({
+        const response = yield exports.genai.models.embedContent({
             model: 'models/gemini-embedding-001', // Using the upgraded official active 2026 standard
             contents: safeText,
         });

@@ -8,7 +8,7 @@ import { JWT_PASSWORD } from './conf';
 dotenv.config();
 import { userMiddleware } from './middleware';
 import { random, sanitizeString } from './utils';
-import { generateLinkDigest, generateTextEmbedding } from './services/aiService';
+import { generateLinkDigest, generateTextEmbedding, genai } from './services/aiService';
 import authRoutes from "./auth";
 import cors from "cors";
 
@@ -448,6 +448,88 @@ app.put('/api/v1/content/:id', userMiddleware, async (req, res) => {
     } catch (err) {
         console.error('Update content error:', err);
         res.status(500).json({ message: 'Failed to update content' });
+    }
+});
+
+const calculateCosineSimilarity = (vecA: number[], vecB: number[]) => {
+    if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
+    let dotProduct = 0;
+    let mA = 0;
+    let mB = 0;
+    for (let i = 0; i < vecA.length; i++) {
+        dotProduct += vecA[i] * vecB[i];
+        mA += vecA[i] * vecA[i];
+        mB += vecB[i] * vecB[i];
+    }
+    if (mA === 0 || mB === 0) return 0;
+    return dotProduct / (Math.sqrt(mA) * Math.sqrt(mB));
+};
+
+app.post('/api/v1/nests/:nestId/chat', userMiddleware, async (req: any, res: any) => {
+    try {
+        const { nestId } = req.params;
+        const { message } = req.body;
+
+        if (!message || message.trim().length === 0) {
+            return res.status(404).json({ message: "Empty query string provided." });
+        }
+
+        // 1. Vectorize the incoming user question using our upgraded live model
+        const queryVector = await generateTextEmbedding(message);
+
+        // 2. Query all resource assets saved inside this specific Nest container
+        const contextDocuments = await ContentModel.find({ nestId }).lean();
+
+        if (!contextDocuments || contextDocuments.length === 0) {
+            return res.status(200).json({
+                answer: "This Nest workspace is currently empty. Please drop and save a few technical links first so I can analyze them and answer your questions!"
+            });
+        }
+
+        // 3. Compute vector matrix similarity scores locally
+        const scoredDocs = contextDocuments.map(doc => {
+            const similarity = calculateCosineSimilarity(queryVector, doc.embedding || []);
+            return { ...doc, similarityScore: similarity };
+        });
+
+        // 4. Sort by highest score and isolate top 3 matching chunks
+        const highlyRelevantDocs = scoredDocs
+            .sort((a, b) => b.similarityScore - a.similarityScore)
+            .slice(0, 3);
+
+        // 5. Synthesize context payload for the prompt window injection
+        const contextualReferenceText = highlyRelevantDocs
+            .map(d => `Source Title: ${d.title}\nSource Overview: ${d.description}\nAI Smart Digest: ${d.aiSummary}`)
+            .join('\n\n---\n\n');
+
+        // 6. Invoke gemini-2.5-flash with deep structural system grounding instructions
+        const response = await genai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `You are an elite, institutional-grade technical AI tutor assisting a software engineer preparing for competitive system design and core CS interviews.
+      Analyze the user's interview question by relying strictly on the following highly relevant reference insights extracted from their saved items inside this workspace Nest container.
+
+      ---
+      RELEVANT WORKSPACE CONTEXT:
+      ${contextualReferenceText}
+      ---
+
+      USER INTERVIEW QUESTION:
+      "${message}"
+
+      INSTRUCTIONS:
+      - Answer the question directly using professional, structured bullet points, clear hierarchy, and line breaks.
+      - Base your primary architectural logic on the provided workspace context insights.
+      - If the answer cannot be confidently inferred from the reference context, leverage your extensive system design expertise to deliver an advanced textbook-level response, but explicitly append a subtle note at the very end stating: '[Grounded baseline extensions applied; asset context was thin].'
+      - Do not make up fake details or references that don't exist.`
+        });
+
+        return res.status(200).json({
+            answer: response.text || "Direct answer processing pipeline encountered an internal inference delay."
+        });
+
+    } catch (error: any) {
+        console.error("❌ RAG In-Memory Calculation Matcher Failed:", error.message);
+        return res.status(500).json({ message: "Internal server processing drop encountered inside the RAG loop." });
     }
 });
 
