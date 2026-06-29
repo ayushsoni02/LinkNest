@@ -47,8 +47,8 @@
 | **🎯 Universal Link Saving** | Save content from YouTube, Twitter/X, Medium, GitHub, Substack, Instagram, and any web article |
 | **📂 Nests (Collections)** | Organize your links into customizable collections called "Nests" for better categorization |
 | **🔍 Smart Search & Filter** | Instantly search by title or filter by platform type |
-| **🏷️ Tag System** | Add custom tags to your saved content for enhanced discoverability |
-| **🔗 Shareable Nest Links** | Generate unique share links to publicly share your curated content collection |
+| **🔗 Share & Duplicate** | Generate unique Notion-style share links to publicly share your curated content collection, allowing others to duplicate it |
+| **🤖 AI Chat & RAG** | Chat directly with your saved links using advanced Vector Search (Cosine Similarity) and Gemini AI |
 
 ### Smart Content Cards
 
@@ -100,7 +100,7 @@
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │                      API Routes                            │  │
 │  │  /api/v1/auth    /api/v1/content   /api/v1/nests          │  │
-│  │  /api/v1/extract /api/v1/brain     /health                │  │
+│  │  /api/v1/nests/:nestId/chat        /api/v1/public         │  │
 │  └────────────────────────┬──────────────────────────────────┘  │
 │  ┌──────────────┐ ┌───────┴───────┐ ┌───────────────────────┐  │
 │  │  Middleware  │ │   Services    │ │     Passport.js       │  │
@@ -116,6 +116,55 @@
 │  │   Users    │ │  Contents  │ │   Nests    │ │   Links    │   │
 │  └────────────┘ └────────────┘ └────────────┘ └────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
+```
+
+### AI & RAG Architecture
+
+```
+┌───────────────────────────────────────────────────────────────────────┐
+│                        AI PIPELINE & RAG CORE                         │
+│                                                                       │
+│  1. CONTENT CLASSIFIER (Ingestion)                                    │
+│  ┌────────────┐   ┌────────────────┐   ┌───────────────────────────┐  │
+│  │ User URL   │──>│ Web Scraper    │──>│ Gemini 2.5 Flash Cascade  │  │
+│  │ Submission │   │ (Cheerio/vxtw) │   │ (Smart Digest Generation) │  │
+│  └────────────┘   └────────────────┘   └─────────────┬─────────────┘  │
+│                                                      │                │
+│  ┌───────────────────────────────────────────────────▼─────────────┐  │
+│  │ Gemini Embedding 001                                            │  │
+│  │ (Transforms context into 768-dimensional float matrix)          │  │
+│  └───────────────────────────────────────────────────┬─────────────┘  │
+│                                                      │                │
+│                                                      ▼                │
+│                                        ┌───────────────────────────┐  │
+│                                        │ MongoDB (Store Vector &   │  │
+│                                        │ AI Summary in Content doc)│  │
+│                                        └───────────────────────────┘  │
+│                                                                       │
+│  2. CHAT WITH NEST (Retrieval-Augmented Generation)                   │
+│  ┌────────────┐   ┌──────────────────────────┐                        │
+│  │ User Chat  │──>│ Gemini Embedding 001     │                        │
+│  │ Query      │   │ (Vectorize query)        │                        │
+│  └────────────┘   └────────────┬─────────────┘                        │
+│                                │                                      │
+│                                ▼                                      │
+│  ┌─────────────────────────────────────────────────────────────────┐  │
+│  │ Cosine Similarity Engine (In-Memory)                            │  │
+│  │ Maps query vector against all Nest link vectors (MongoDB lean)  │  │
+│  │ Extracts Top-3 highest matching chunks                          │  │
+│  └─────────────────────────────┬───────────────────────────────────┘  │
+│                                │                                      │
+│                                ▼                                      │
+│  ┌─────────────────────────────────────────────────────────────────┐  │
+│  │ Gemini 2.5 Flash / 1.5 Flash (Model Fallback Cascade)           │  │
+│  │ Analyzes grounded sources and synthesizes a direct response     │  │
+│  └─────────────────────────────┬───────────────────────────────────┘  │
+│                                │                                      │
+│                                ▼                                      │
+│                     ┌────────────────────┐                            │
+│                     │ UI Chat Interface  │                            │
+│                     └────────────────────┘                            │
+└───────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Tech Stack
@@ -147,7 +196,8 @@
 | **Passport.js** | OAuth 2.0 integration |
 | **bcrypt** | Password hashing |
 | **Axios + Cheerio** | Web scraping for metadata extraction |
-| **express-rate-limit** | API rate limiting |
+| **@google/genai SDK** | Native Gemini integration (Embeddings & Chat) |
+| **High Availability** | Model Fallback Cascade (gemini-2.5-flash / 1.5-flash) |
 
 ### Database Schema
 
@@ -170,6 +220,9 @@
   image?: string        // Thumbnail/OG image URL
   nestId?: ObjectId     // Reference to Nest collection
   userId: ObjectId      // Reference to User (required)
+  aiSummary?: string    // AI generated technical summary
+  aiKeyPoints?: string[]// AI generated key takeaways
+  embedding?: number[]  // 768-dimensional float vector matrix for RAG
   createdAt: Date       // Auto-generated timestamp
 }
 
@@ -178,6 +231,8 @@
   name: string          // Collection name
   description?: string  // Optional description
   userId: ObjectId      // Owner reference (required)
+  isPublic: boolean     // Public sharing toggle
+  shareToken?: string   // Secure 16-character hex string for Notion-style links
   createdAt: Date       // Auto-generated timestamp
 }
 
@@ -235,6 +290,9 @@ SESSION_SECRET=your_session_secret_key
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_CALLBACK_URL=http://localhost:3000/api/v1/auth/google/callback
+
+# Gemini AI (Required for Vectors & Chat)
+GEMINI_API_KEY=your_gemini_api_key
 
 # Application
 NODE_ENV=development
