@@ -20,8 +20,6 @@ export function ShareNestModal({ isOpen, onClose, nestId, nestName, initialIsPub
 
     if (!isOpen) return null;
 
-    const shareUrl = shareToken ? `${window.location.origin}/p/shared-nest/${shareToken}` : '';
-
     const handleToggle = async () => {
         setIsLoading(true);
         try {
@@ -43,17 +41,6 @@ export function ShareNestModal({ isOpen, onClose, nestId, nestName, initialIsPub
             alert('Failed to update nest sharing settings.');
         } finally {
             setIsLoading(false);
-        }
-    };
-
-    const handleCopy = async () => {
-        if (!shareUrl) return;
-        try {
-            await navigator.clipboard.writeText(shareUrl);
-            setIsCopied(true);
-            setTimeout(() => setIsCopied(false), 2000);
-        } catch (err) {
-            console.error('Failed to copy text: ', err);
         }
     };
 

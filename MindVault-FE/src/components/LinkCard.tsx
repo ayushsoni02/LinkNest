@@ -1,6 +1,6 @@
 import React, { useState, useCallback, Fragment } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Dialog, Transition, Menu } from '@headlessui/react';
+import { motion } from 'framer-motion';
+import { Dialog, Transition} from '@headlessui/react';
 import { 
     ExternalLink, 
     Copy, 
@@ -101,7 +101,6 @@ export default function LinkCard({
     id,
     url,
     title,
-    description,
     image,
     siteName,
     favicon,
@@ -155,10 +154,7 @@ export default function LinkCard({
         }
     }, [url]);
 
-    const handleOpenNewTab = useCallback((e: React.MouseEvent) => {
-        e.stopPropagation();
-        window.open(url, '_blank', 'noopener,noreferrer');
-    }, [url]);
+
 
     const handleMoveToNest = async (nestId: string | null, e?: React.MouseEvent) => {
         if (e) e.stopPropagation();
