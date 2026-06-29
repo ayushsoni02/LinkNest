@@ -26,6 +26,9 @@ const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
             serverSelectionTimeoutMS: 10000, // Timeout after 10s instead of hanging
         });
         console.log("✅ MongoDB Connected Successfully");
+        // Temporary drop index for local development index synchronization
+        yield mongoose_1.default.connection.collection('users').dropIndex("username_1").catch(() => { });
+        yield mongoose_1.default.connection.collection('users').dropIndex("googleId_1").catch(() => { });
     }
     catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -37,17 +40,27 @@ const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 connectDB();
 const UserSchema = new Schema({
-    username: { type: String, required: true, unique: true },
+    username: { type: String, required: true, unique: true, sparse: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, required: false },
     googleId: { type: String, unique: true, sparse: true },
+    avatarUrl: { type: String, required: false },
 });
 exports.userModel = mongoose_1.default.model('users', UserSchema);
+const crypto_1 = __importDefault(require("crypto"));
 const NestSchema = new Schema({
     name: { type: String, required: true },
     description: String,
     userId: { type: mongoose_1.default.Types.ObjectId, ref: 'users', required: true },
+    isPublic: { type: Boolean, default: false },
+    shareToken: { type: String, unique: true, sparse: true },
     createdAt: { type: Date, default: Date.now }
+});
+NestSchema.pre('save', function (next) {
+    if (!this.shareToken) {
+        this.shareToken = crypto_1.default.randomBytes(8).toString('hex');
+    }
+    next();
 });
 exports.NestModel = mongoose_1.default.model('nests', NestSchema);
 const ContentSchema = new Schema({
@@ -56,6 +69,11 @@ const ContentSchema = new Schema({
     tags: [String],
     type: String,
     summary: String,
+    description: { type: String, required: false },
+    image: { type: String, required: false },
+    aiSummary: { type: String, required: false },
+    aiKeyPoints: { type: [String], required: false },
+    embedding: { type: [Number], required: false },
     aiMetadata: {
         model: String,
         tokensUsed: Number,

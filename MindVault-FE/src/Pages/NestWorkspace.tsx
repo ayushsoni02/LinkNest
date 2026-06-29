@@ -10,14 +10,19 @@ import {
     Search
 } from "lucide-react";
 import Layout from "../components/Layout";
-import SmartLinkCard from "../components/SmartLinkCard";
+import LinkCard from "../components/LinkCard";
+import { ShareNestModal } from "../components/ShareNestModal";
 import { useNests } from "../hooks/useNests";
 import { useContent } from "../hooks/UseContent";
+import axios from "axios";
+import { BACKEND_URL } from "../Config";
 
 export default function NestWorkspace() {
     const { id } = useParams();
     const [viewMode, setViewMode] = useState<'gallery' | 'chat'>('gallery');
     const [input, setInput] = useState("");
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     
     const { nests } = useNests();
     const { contents } = useContent();
@@ -34,13 +39,37 @@ export default function NestWorkspace() {
         }
     ]);
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (!input.trim()) return;
-        setMessages([...messages, { role: 'user', content: input }]);
+        
+        const userMessage = input;
+        setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
         setInput("");
-        setTimeout(() => {
-            setMessages(prev => [...prev, { role: 'ai', content: "That's an interesting question regarding the content in this Nest. Based on the React article, Server Components run exclusively on the server to reduce bundle size." }]);
-        }, 1000);
+        setIsLoading(true);
+
+        try {
+            const token = localStorage.getItem('token');
+            const endpoint = `${BACKEND_URL}/api/v1/nests/${id}/chat`;
+            const response = await axios.post(
+                endpoint,
+                { message: userMessage },
+                { headers: { Authorization: token } }
+            );
+
+            if (response.data && response.data.answer) {
+                setMessages(prev => [...prev, { role: 'ai', content: response.data.answer }]);
+            } else {
+                setMessages(prev => [...prev, { role: 'ai', content: "Data aggregation threshold reached. Try again." }]);
+            }
+        } catch (error: any) {
+            console.error("Frontend Communication Drop:", error);
+            setMessages(prev => [...prev, { 
+                role: 'ai', 
+                content: `Connection error: ${error.response?.data?.message || 'Unable to stream response matrix from server.'}` 
+            }]);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -76,7 +105,10 @@ export default function NestWorkspace() {
                              </button>
                          </div>
 
-                         <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm shadow-indigo-500/20">
+                         <button 
+                             onClick={() => setIsShareModalOpen(true)}
+                             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm shadow-indigo-500/20"
+                         >
                              <Share2 size={16} />
                              Share Nest
                          </button>
@@ -89,21 +121,23 @@ export default function NestWorkspace() {
                     {viewMode === 'gallery' ? (
                         /* Gallery View */
                         <div className="h-full overflow-y-auto p-6 lg:p-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 max-w-7xl mx-auto auto-rows-auto">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto auto-rows-fr">
                                 {nestLinks.map((link, index) => (
-                                    <SmartLinkCard 
+                                    <LinkCard 
                                         key={link._id} 
                                         id={link._id}
                                         title={link.title}
                                         url={link.link}
-                                        type={link.type}
+                                        contentType={link.type}
                                         tags={link.tags}
                                         date={new Date(link.createdAt).toLocaleDateString('en-US', {
                                             month: 'short',
                                             day: 'numeric'
                                         })}
-                                        description={link.description}
-                                        thumbnailUrl={link.image}
+                                        aiSummary={link.aiSummary}
+                                        aiKeyPoints={link.aiKeyPoints}
+                                        description={link.description || (link as any).summary}
+                                        image={link.image}
                                         siteName={link.nestId?.name || undefined}
                                         favicon={`https://www.google.com/s2/favicons?domain=${new URL(link.link).hostname}&sz=64`}
                                         currentNestId={link.nestId?._id || null}
@@ -152,7 +186,7 @@ export default function NestWorkspace() {
                                                 </div>
                                             )}
                                             
-                                            <div className={`max-w-[80%] p-4 rounded-2xl text-sm leading-relaxed ${
+                                            <div className={`max-w-[80%] p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                                                 msg.role === 'user' 
                                                 ? 'bg-indigo-600 text-white rounded-br-none shadow-md shadow-indigo-500/20' 
                                                 : 'bg-slate-900 text-slate-200 rounded-bl-none border border-slate-800'
@@ -167,6 +201,16 @@ export default function NestWorkspace() {
                                             )}
                                         </div>
                                     ))}
+                                    {isLoading && (
+                                        <div className="flex gap-4 justify-start">
+                                            <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
+                                                <Bot size={18} className="text-indigo-400" />
+                                            </div>
+                                            <div className="bg-slate-900 text-slate-400 p-4 rounded-2xl rounded-bl-none border border-slate-800 text-sm flex items-center gap-2">
+                                                <span className="animate-pulse">Thinking...</span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Input Area */}
@@ -182,7 +226,8 @@ export default function NestWorkspace() {
                                         />
                                         <button 
                                             onClick={handleSend}
-                                            className="absolute right-2 top-2 p-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-lg shadow-indigo-500/30 opacity-90 hover:scale-105 active:scale-95"
+                                            disabled={isLoading}
+                                            className={`absolute right-2 top-2 p-1.5 rounded-lg transition-colors shadow-lg ${isLoading ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/30 opacity-90 hover:scale-105 active:scale-95'}`}
                                         >
                                             <Send size={18} />
                                         </button>
@@ -197,6 +242,21 @@ export default function NestWorkspace() {
                     )}
                 </main>
             </div>
+            
+            {nest && (
+                <ShareNestModal 
+                    isOpen={isShareModalOpen}
+                    onClose={() => setIsShareModalOpen(false)}
+                    nestId={nest._id}
+                    nestName={nest.name}
+                    initialIsPublic={nest.isPublic || false}
+                    shareToken={nest.shareToken}
+                    onUpdate={(isPublic, shareToken) => {
+                        nest.isPublic = isPublic;
+                        nest.shareToken = shareToken;
+                    }}
+                />
+            )}
         </Layout>
     );
 }

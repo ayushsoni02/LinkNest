@@ -12,6 +12,8 @@ export type Content = {
     description?: string;
     summary?: string; // Legacy field for backwards compatibility
     image?: string | null;
+    aiSummary?: string;
+    aiKeyPoints?: string[];
     nestId: { _id: string; name: string; description?: string } | null;
     createdAt: string;
 };

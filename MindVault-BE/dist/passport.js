@@ -22,7 +22,8 @@ dotenv_1.default.config();
 const configurePassport = () => {
     // Serialize user to the session
     passport_1.default.serializeUser((user, done) => {
-        done(null, user.id);
+        var _a;
+        done(null, user.id || ((_a = user._id) === null || _a === void 0 ? void 0 : _a.toString()));
     });
     // Deserialize user from the session
     passport_1.default.deserializeUser((id, done) => __awaiter(void 0, void 0, void 0, function* () {
@@ -41,34 +42,42 @@ const configurePassport = () => {
         callbackURL: `${process.env.BACKEND_URL}/api/v1/auth/google/callback`,
         scope: ['profile', 'email'],
     }, (accessToken, refreshToken, profile, done) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a, _b;
+        var _a, _b, _c, _d;
         try {
-            // Find existing user or create a new one
+            // Step A: Existing OAuth Check
             let user = yield db_1.userModel.findOne({ googleId: profile.id });
             if (user) {
                 return done(null, user);
             }
-            // Check if a user with this email already exists
+            // Step B: Cross-Channel Identity Mapping
             if (profile.emails && profile.emails.length > 0) {
                 const email = profile.emails[0].value;
                 user = yield db_1.userModel.findOne({ email });
                 if (user) {
-                    // Update existing user with Google ID
+                    // Link Google ID and update avatarUrl
                     user.googleId = profile.id;
+                    if (profile.photos && profile.photos.length > 0) {
+                        user.avatarUrl = profile.photos[0].value;
+                    }
                     yield user.save();
                     return done(null, user);
                 }
             }
-            // Create a new user
+            // Step C: New Profile Hydration
+            // Generate a slugified username + random 4-digit string to ensure uniqueness
+            const baseName = (profile.displayName || 'user').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const newUsername = `${baseName}_${(0, utils_1.random)(4)}`;
             const newUser = yield db_1.userModel.create({
-                username: profile.displayName || `user_${(0, utils_1.random)(8)}`,
+                username: newUsername,
                 email: (_b = (_a = profile.emails) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.value,
                 googleId: profile.id,
-                password: (0, utils_1.random)(32) // Random password for Google users
+                avatarUrl: (_d = (_c = profile.photos) === null || _c === void 0 ? void 0 : _c[0]) === null || _d === void 0 ? void 0 : _d.value,
+                // Password is now optional per schema, no need for random generation
             });
             return done(null, newUser);
         }
         catch (error) {
+            console.error("Passport Google Strategy Error:", error);
             return done(error);
         }
     })));

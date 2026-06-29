@@ -16,6 +16,10 @@ const connectDB = async () => {
         });
 
         console.log("✅ MongoDB Connected Successfully");
+
+        // Temporary drop index for local development index synchronization
+        await mongoose.connection.collection('users').dropIndex("username_1").catch(() => {});
+        await mongoose.connection.collection('users').dropIndex("googleId_1").catch(() => {});
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         console.error("❌ MongoDB Connection Failed:", message);
@@ -29,20 +33,31 @@ connectDB();
 
 
 const UserSchema = new Schema({
-
-    username: { type: String, required: true, unique: true },
+    username: { type: String, required: true, unique: true, sparse: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, required: false },
     googleId: { type: String, unique: true, sparse: true },
+    avatarUrl: { type: String, required: false },
 });
 
 export const userModel = mongoose.model('users', UserSchema);
+
+import crypto from "crypto";
 
 const NestSchema = new Schema({
     name: { type: String, required: true },
     description: String,
     userId: { type: mongoose.Types.ObjectId, ref: 'users', required: true },
+    isPublic: { type: Boolean, default: false },
+    shareToken: { type: String, unique: true, sparse: true },
     createdAt: { type: Date, default: Date.now }
+});
+
+NestSchema.pre('save', function (next) {
+    if (!this.shareToken) {
+        this.shareToken = crypto.randomBytes(8).toString('hex');
+    }
+    next();
 });
 
 export const NestModel = mongoose.model('nests', NestSchema);
@@ -53,6 +68,11 @@ const ContentSchema = new Schema({
     tags: [String],
     type: String,
     summary: String,
+    description: { type: String, required: false },
+    image: { type: String, required: false },
+    aiSummary: { type: String, required: false },
+    aiKeyPoints: { type: [String], required: false },
+    embedding: { type: [Number], required: false },
     aiMetadata: {
         model: String,
         tokensUsed: Number,
