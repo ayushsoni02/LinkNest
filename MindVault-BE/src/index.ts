@@ -565,6 +565,10 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: Date.now() });
 });
 
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
-});
+if (process.env.NODE_ENV !== 'test') {
+    app.listen(3000, () => {
+        console.log('Server is running on port 3000');
+    });
+}
+
+export default app;

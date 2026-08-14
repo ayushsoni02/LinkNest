@@ -1,0 +1,67 @@
+name: LinkNest CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  backend-checks:
+    name: Backend Tests & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./MindVault-BE
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './MindVault-BE/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check (Build)
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+  frontend-checks:
+    name: Frontend Tests, Lint & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./MindVault-FE
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './MindVault-FE/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Type check (Build)
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
