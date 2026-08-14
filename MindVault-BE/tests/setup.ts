@@ -2,14 +2,16 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { beforeAll, afterAll, afterEach } from 'vitest';
 
+// Set environment variables synchronously before any imports evaluate
+process.env.JWT_PASSWORD = 'testsecret';
+process.env.SESSION_SECRET = 'testsession';
+
 let mongoServer: MongoMemoryServer;
 
 beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();
     process.env.MONGO_URL = mongoUri;
-    process.env.JWT_PASSWORD = 'testsecret';
-    process.env.SESSION_SECRET = 'testsession';
 
     await mongoose.connect(mongoUri);
 });
