@@ -4,7 +4,7 @@ require('dotenv').config()
 
 
 
-const connectDB = async () => {
+export const connectDB = async () => {
     try {
         // Hide credentials in logs, but verify the variable exists
         if (!process.env.MONGO_URL) {
@@ -29,7 +29,9 @@ const connectDB = async () => {
     }
 };
 
-connectDB();
+if (process.env.NODE_ENV !== 'test') {
+    connectDB();
+}
 
 
 const UserSchema = new Schema({
