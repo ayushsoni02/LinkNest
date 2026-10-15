@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect } from 'react';
+import { Fragment, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { X, Pencil } from 'lucide-react';
 
@@ -16,12 +16,17 @@ export default function RenameNestModal({
   currentName 
 }: RenameNestModalProps) {
   const [name, setName] = useState(currentName);
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [prevCurrentName, setPrevCurrentName] = useState(currentName);
 
-  useEffect(() => {
+  // Reset the input whenever the modal opens or the target nest changes
+  if (open !== prevOpen || currentName !== prevCurrentName) {
+    setPrevOpen(open);
+    setPrevCurrentName(currentName);
     if (open) {
       setName(currentName);
     }
-  }, [open, currentName]);
+  }
 
   const handleSubmit = () => {
     if (!name.trim() || name.trim() === currentName) {

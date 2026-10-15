@@ -55,18 +55,13 @@ import { Link, useNavigate } from "react-router-dom";
 import ProfileDropdown from "./ProfileDropdown";
 
 const Navigation = () => {
-  const [username, setUsername] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(() =>
+    localStorage.getItem("user")
+  );
   const navigate = useNavigate();
   const [isDark, setIsDark] = useState(() =>
     localStorage.getItem("theme") === "dark"
   );
-
-  useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (user) {
-      setUsername(user);
-    }
-  }, []);
 
   useEffect(() => {
     const root = window.document.documentElement;

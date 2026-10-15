@@ -14,9 +14,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import GoogleOAuthButton from "../components/OAuth/GoogleOAuthButton";
 const SignUp = () => {
 
-   const usernameRef = useRef<HTMLInputElement>();
-    const passwordRef = useRef<HTMLInputElement>();
-    const emailRef = useRef<HTMLInputElement>();  
+   const usernameRef = useRef<HTMLInputElement>(null);
+    const passwordRef = useRef<HTMLInputElement>(null);
+    const emailRef = useRef<HTMLInputElement>(null);  
     const navigate  = useNavigate();
 
    async function signup(){
