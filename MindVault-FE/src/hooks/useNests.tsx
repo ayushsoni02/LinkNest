@@ -12,24 +12,23 @@ export interface Nest {
   shareToken?: string;
 }
 
+const requestNests = () =>
+  axios.get<{ nests: Nest[] }>(`${BACKEND_URL}/api/v1/nests`, {
+    headers: {
+      'Authorization': localStorage.getItem('token') || ''
+    }
+  });
+
 export function useNests() {
   const [nests, setNests] = useState<Nest[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchNests = async () => {
-    try {
-      const response = await axios.get(`${BACKEND_URL}/api/v1/nests`, {
-        headers: {
-          'Authorization': localStorage.getItem('token') || ''
-        }
-      });
-      setNests(response.data.nests);
-    } catch (error) {
-      console.error("Error fetching nests:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // State is only set inside promise callbacks so this is safe to call from effects
+  const fetchNests = () =>
+    requestNests()
+      .then((response) => setNests(response.data.nests))
+      .catch((error) => console.error("Error fetching nests:", error))
+      .finally(() => setLoading(false));
 
   const createNest = async (data: { name: string; description?: string }) => {
     try {
@@ -75,11 +74,9 @@ export function useNests() {
 
   useEffect(() => {
     fetchNests();
-    
+
     // Refresh nests every 30 seconds
-    const interval = setInterval(() => {
-      fetchNests();
-    }, 30 * 1000);
+    const interval = setInterval(fetchNests, 30 * 1000);
 
     return () => clearInterval(interval);
   }, []);

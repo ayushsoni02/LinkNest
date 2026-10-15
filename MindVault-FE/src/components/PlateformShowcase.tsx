@@ -1,4 +1,5 @@
-import { Twitter, Youtube, FileText, Globe, Linkedin, Instagram } from "lucide-react";
+import { FileText, Globe } from "lucide-react";
+import { Twitter, Youtube, Linkedin, Instagram } from "./icons/SocialIcons";
 
 const PlatformShowcase = () => {
   const platforms = [

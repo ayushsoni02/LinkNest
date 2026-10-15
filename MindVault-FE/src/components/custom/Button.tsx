@@ -25,7 +25,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const combinedClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
     
     if (asChild && React.isValidElement(children)) {
-      return React.cloneElement(children as React.ReactElement, {
+      return React.cloneElement(children as React.ReactElement<any>, {
         className: combinedClasses,
         ref,
         ...props

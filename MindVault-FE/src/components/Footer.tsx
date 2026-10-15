@@ -1,4 +1,5 @@
-import { Bookmark, Github, Twitter, Linkedin } from "lucide-react";
+import { Bookmark } from "lucide-react";
+import { Github, Twitter, Linkedin } from "./icons/SocialIcons";
 import { Link } from "react-router-dom";
 
 const Footer = () => {

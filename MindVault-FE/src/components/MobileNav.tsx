@@ -6,13 +6,12 @@ import SidebarItem from "./SidebarItem";
 import { 
   LayoutGrid, 
   Newspaper, 
-  Youtube, 
-  Twitter,
-  Plus,
-  FolderOpen,
-  Menu,
-  X
+  Plus, 
+  FolderOpen, 
+  Menu, 
+  X 
 } from "lucide-react";
+import { Youtube, Twitter } from "./icons/SocialIcons";
 import ProfileDropdown from "./ProfileDropdown";
 import CreateNestModal from "./CreateNestModal";
 import { useNests } from "../hooks/useNests";

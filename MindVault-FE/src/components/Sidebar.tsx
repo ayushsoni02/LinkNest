@@ -6,13 +6,12 @@ import SidebarItem from "./SidebarItem";
 import { 
   LayoutGrid, 
   Newspaper, 
-  Youtube, 
-  Twitter,
-  Plus,
-  FolderOpen,
-  ChevronLeft,
-  ChevronRight
+  Plus, 
+  FolderOpen, 
+  ChevronLeft, 
+  ChevronRight 
 } from "lucide-react";
+import { Youtube, Twitter } from "./icons/SocialIcons";
 import ProfileDropdown from "./ProfileDropdown";
 import CreateNestModal from "./CreateNestModal";
 import DeleteNestConfirmModal from "./DeleteNestConfirmModal";

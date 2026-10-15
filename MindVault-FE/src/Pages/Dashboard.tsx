@@ -12,25 +12,20 @@ function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<{ type: string; value: string | null }>({ 
-    type: 'all', 
-    value: null 
-  });
+  // Filters passed from the sidebar arrive as navigation state, which only
+  // happens when navigating here from another page (i.e. on mount)
+  const [activeFilter, setActiveFilter] = useState<{ type: string; value: string | null }>(() =>
+    location.state?.filterType
+      ? { type: location.state.filterType, value: location.state.filterValue }
+      : { type: 'all', value: null }
+  );
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const { contents, refresh } = useContent();
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-
-  // Check for navigation state (filters passed from sidebar)
-  useEffect(() => {
-    if (location.state?.filterType) {
-       setActiveFilter({ 
-         type: location.state.filterType, 
-         value: location.state.filterValue 
-       });
-    }
-  }, [location.state]);
+  const [loadTimedOut, setLoadTimedOut] = useState(false);
+  // Show skeletons until contents arrive, or until the timeout handles empty states
+  const isInitialLoad = contents.length === 0 && !loadTimedOut;
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -40,15 +35,10 @@ function Dashboard() {
     }
   }, [navigate]);
 
-  // Set initial load to false after contents load
   useEffect(() => {
-    if (contents.length > 0) {
-      setIsInitialLoad(false);
-    }
-    // Also set to false after a timeout to handle empty states
-    const timeout = setTimeout(() => setIsInitialLoad(false), 1000);
+    const timeout = setTimeout(() => setLoadTimedOut(true), 1000);
     return () => clearTimeout(timeout);
-  }, [contents]);
+  }, []);
 
   const handleDelete = async (id: string) => {
     console.log('Deleting link:', id);

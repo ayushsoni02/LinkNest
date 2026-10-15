@@ -13,8 +13,8 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import GoogleOAuthButton from "../components/OAuth/GoogleOAuthButton";
 const SignIn = () => {
-    const usernameRef = useRef<HTMLInputElement>();
-    const passwordRef = useRef<HTMLInputElement>();
+    const usernameRef = useRef<HTMLInputElement>(null);
+    const passwordRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
 
      async function signin(){
